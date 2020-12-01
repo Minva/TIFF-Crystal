@@ -2,18 +2,101 @@
 module Tiff
   VERSION = "0.1.0"
 
+  INTEL_BYTE_ORDER = "II"
+  MOTOROLA_BYTE_ORDER = "MM"
+
+  class ImageFileHeader
+    getter id_order : String = ""
+    getter offset : UInt32 = 0
+    getter version_number : UInt16 = 0
+
+    private def byte_order?
+      @id_order == INTEL_BYTE_ORDER || @id_order == MOTOROLA_BYTE_ORDER
+    end
+
+    def initialize(data : String)
+      raise "TIFF Image File Header size < 8 bytes" if data.size < 8
+      @id_order = data[0..1]
+      raise "TIFF Invalid Identification Byte Order" unless self.byte_order?
+      @version_number = (data[2..3].not_nil!.to_unsafe.as Pointer(UInt16))[0]
+      @offset = (data[4..7].not_nil!.to_unsafe.as Pointer(UInt32))[0]
+    end
+  end
+
+  class DirectoryEntry
+    getter tag : UInt16
+    getter type : UInt16
+    getter count : UInt32
+    getter offset : UInt32
+
+    def initialize(data : String)
+      # TODO : Do raise correcly with a string
+      # raise "TIFF DirectoryEntry size < 12 bytes" if data.size < 12
+      @tag = (data[0..1].not_nil!.to_unsafe.as Pointer(UInt16))[0]
+      @type = (data[2..3].not_nil!.to_unsafe.as Pointer(UInt16))[0]
+      @count = (data[4..7].not_nil!.to_unsafe.as Pointer(UInt32))[0]
+      @offset = (data[8..11].not_nil!.to_unsafe.as Pointer(UInt32))[0]
+    end
+  end
+
+  class ImageFileDirectory
+    @file : File
+
+    getter directory_entries : Array(DirectoryEntry) = Array(DirectoryEntry).new
+    getter number_entries : UInt16 = 0
+    getter offset : UInt32
+
+    def initialize(@file : File, @offset : UInt32)
+      @file.pos = @offset
+      @number_entries = (file.gets(2).not_nil!.to_unsafe.as Pointer(UInt16))[0]
+      itr = 0
+      while itr < @number_entries
+        directoryEntry = DirectoryEntry.new @file.gets(12).not_nil!
+        @directory_entries << directoryEntry
+        itr = itr + 1
+      end
+      @offset = if @directory_entries[@number_entries - 1].tag == 0
+        0.to_u32
+      else
+        (@file.gets(4).not_nil!.to_unsafe.as Pointer(UInt32))[0]
+      end
+    end
+  end
+
   class Tiff
     @file : File | Nil = nil
+    @ifd : Array(ImageFileDirectory) = Array(ImageFileDirectory).new
+
+    getter header : ImageFileHeader | Nil = nil
 
     def initialize(path : String)
       @file = File.new path
-      self.image_file_header
-      self.image_file_directory
+      @header = ImageFileHeader.new @file.not_nil!.gets(8).not_nil!
+      self.load_image_file_directories
     end
   
     def initialize(uri : URI)
+      raise "TIFF load from URI not supported"
     end
-  
+
+    ###########################################################################
+    # Private
+    ###########################################################################
+
+    private def load_image_file_directories
+      offset = @header.not_nil!.offset
+      loop do
+        imgFDir = ImageFileDirectory.new @file.not_nil!, offset
+        @ifd << imgFDir
+        break if imgFDir.offset == 0
+        offset = imgFDir.offset
+      end
+    end
+
+    ###########################################################################
+    # It a Huge Messy & code write as shit
+    ###########################################################################
+
     private def type_to_s(value : UInt16)
       case value
       when 1 then return "BYTE" # 8-bit unsigned integer.
@@ -28,6 +111,23 @@ module Tiff
       when 10 then return "SRATIONAL" # Two SLONG’s: the first represents the numerator of a fraction, the second the denominator.
       when 11 then return "FLOAT" # Single precision (4-byte) IEEE format.
       when 12 then return "DOUBLE" # Double precision (8-byte) IEEE format.
+      end
+    end
+
+    private def type_to_type(value : UInt16)
+      case value
+      when 1 then return UInt8 # 8-bit unsigned integer.
+      when 2 then return String # 8-bit byte that contains a 7-bit ASCII code; the last byte must be NUL (binary zero).
+      when 3 then return UInt16 # 16-bit (2-byte) unsigned integer
+      when 4 then return UInt32 # 32-bit (4-byte) unsigned integer
+      when 5 then return UInt64 # Two LONGs: the first represents the numerator of a fraction; the second, the denominator.
+      when 6 then return Int8 # An 8-bit signed (twos-complement) integer.
+      when 7 then return "UNDEFINED" # An 8-bit byte that may contain anything, depending on the definition of the field.
+      when 8 then return Int16 # A 16-bit (2-byte) signed (twos-complement) integer.
+      when 9 then return Int32 # A 32-bit (4-byte) signed (twos-complement) integer.
+      when 10 then return Int64 # Two SLONG’s: the first represents the numerator of a fraction, the second the denominator.
+      when 11 then return Float32 # Single precision (4-byte) IEEE format.
+      when 12 then return Float64 # Double precision (8-byte) IEEE format.
       end
     end
 
@@ -191,7 +291,7 @@ module Tiff
       when 37383 then return "MeteringMode"
       when 37384 then return "LightSource"
       when 37385 then return "Flash"
-      when 37386 then return "FocalLength	"
+      when 37386 then return "FocalLength"
       when 37387 then return "FlashEnergy"
       when 37388 then return "SpatialFrequencyResponse"
       when 37389 then return "Noise"
@@ -209,7 +309,7 @@ module Tiff
       when 37510 then return "UserComment"
       when 37520 then return "SubsecTime"
       when 37521 then return "SubsecTimeOriginal"
-      when 37522 then return "SubsecTimeDigitized	"
+      when 37522 then return "SubsecTimeDigitized"
       when 37724 then return "ImageSourceData"
       when 40091 then return "XPTitle"
       when 40092 then return "XPComment"
@@ -219,7 +319,7 @@ module Tiff
       when 40960 then return "FlashpixVersion"
       when 40961 then return "ColorSpace"
       when 40962 then return "PixelXDimension"
-      when 40963 then return "PixelYDimension	"
+      when 40963 then return "PixelYDimension"
       when 40964 then return "RelatedSoundFile"
       when 40965 then return "InteroperabilityIFD"
       when 41483 then return "FlashEnergy"
@@ -260,13 +360,13 @@ module Tiff
       when 48132 then return "ImageType"
       when 48256 then return "ImageWidth"
       when 48257 then return "ImageHeight"
-      when 48258 then return "WidthResolution	"
+      when 48258 then return "WidthResolution"
       when 48259 then return "HeightResolution"
       when 48320 then return "ImageOffset"
       when 48321 then return "ImageByteCount"
       when 48322 then return "AlphaOffset"
       when 48323 then return "AlphaByteCount"
-      when 48324 then return "ImageDataDiscard	"
+      when 48324 then return "ImageDataDiscard"
       when 48325 then return "AlphaDataDiscard"
       when 50215 then return "OceScanjobDescription"
       when 50216 then return "OceApplicationSelector"
@@ -285,9 +385,9 @@ module Tiff
       when 50715 then return "BlackLevelDeltaH"
       when 50716 then return "BlackLevelDeltaV"
       when 50717 then return "WhiteLevel"
-      when 50718 then return "DefaultScale "
-      when 50719 then return "DefaultCropOrigin	 "
-      when 50720 then return "DefaultCropSize	"
+      when 50718 then return "DefaultScale"
+      when 50719 then return "DefaultCropOrigin"
+      when 50720 then return "DefaultCropSize"
       when 50721 then return "ColorMatrix1"
       when 50722 then return "ColorMatrix2"
       when 50723 then return "CameraCalibration1"
@@ -313,13 +413,13 @@ module Tiff
       when 50779 then return "CalibrationIlluminant2"
       when 50780 then return "BestQualityScale"
       when 50781 then return "RawDataUniqueID"
-      when 50784 then return "Alias Layer Metadata"
+      when 50784 then return "AliasLayerMetadata"
       when 50828 then return "OriginalRawFileData"
       when 50829 then return "ActiveArea"
       when 50830 then return "MaskedAreas"
       when 50831 then return "AsShotICCProfile"
       when 50832 then return "AsShotPreProfileMatrix"
-      when 50833 then return "CurrentICCProfile	"
+      when 50833 then return "CurrentICCProfile"
       when 50834 then return "CurrentPreProfileMatrix"
       when 50879 then return "ColorimetricReference"
       when 50931 then return "CameraCalibrationSignature"
@@ -367,38 +467,40 @@ module Tiff
       end
     end
 
-    private def image_file_header
-      file = @file.not_nil!
-      puts file.gets(2)
-      puts file.gets(2)
-      data = file.gets(4)
-      puts (data.not_nil!.to_unsafe.as Pointer(UInt32))[0]
+    ###################################################################################################################
+    # Loader Value form Tag
+    ###################################################################################################################
+
+    private def load_tile_offsets
     end
-  
-    private def image_file_directory
-      file = @file.not_nil!
-      puts "----------"
-      file.pos = 8
-      nextIFD = 8
-      while nextIFD != 0
-        nbrDirEntries = (file.gets(2).not_nil!.to_unsafe.as Pointer(UInt16))[0]
-        print "Number of Directory Entries : ", nbrDirEntries, "\n"
-        while nbrDirEntries != 0
-          tag = (file.gets(2).not_nil!.to_unsafe.as Pointer(UInt16))[0]
-          if tag == 0
-            nextIFD = 0
-            break
-          end
-          print "Tag   : ", self.tag_to_s(tag), "\n"
-          print "Type  : ", self.type_to_s((file.gets(2).not_nil!.to_unsafe.as Pointer(UInt16))[0]), "\n"
-          print "Count : ", (file.gets(4).not_nil!.to_unsafe.as Pointer(UInt32))[0], "\n"
-          print "Value or Offset : ", (file.gets(4).not_nil!.to_unsafe.as Pointer(UInt32))[0], "\n"
-          nbrDirEntries = nbrDirEntries - 1
-        end
-        break if nextIFD == 0
-        nextIFD = (file.gets(4).not_nil!.to_unsafe.as Pointer(UInt32))[0]
-        print "Offset of next IFD : ", nextIFD, "\n"
-        file.pos = nextIFD
+
+    private def load_compression(type : UInt16, count : UInt32, offset : UInt32)
+      # ref doc : https://www.liquisearch.com/tagged_image_file_format/flexible_options/tiff_compression_tag
+      # ref doc : https://www.awaresystems.be/imaging/tiff/tifftags/compression.html
+      case type
+      when 1 then "uncompressed"
+      when 2 then "CCITT Group 3"
+      when 3 then "CCITT T.4"
+      when 4 then "CCITT T.6"
+      when 5 then "LZW" # Lempel-Ziv & Welch algorithm
+      when 6 then "JPEG Obsolete"
+      when 7 then "JPEG New Style"
+      when 8 then "Deflate Official Version" # Adobe Style
+      when 9 then "JBIG, per ITU-T T.85"
+      when 10 then "JBIG, per ITU-T T.43"
+      when 32766 then "NeXT RLE"
+      when 32773 then "PackBits compression" # Macintosh RLE
+      when 32809 then "ThunderScan RLE"
+      when 32895 then "RasterPadding in CT or MP"
+      when 32896 then "RLE for LW"
+      when 32897 then "RLE for HC"
+      when 32898 then "RLE for BL"
+      when 32946 then "PKZIP Style Deflate Encoding"
+      when 32947 then "Kodak DCS"
+      when 34661 then "JBIG"
+      when 34712 then "JPEG2000"
+      when 34713 then "Nikon NEF Compressed"
+      else
       end
     end
   end
@@ -406,22 +508,4 @@ end
 
 image = Tiff::Tiff.new "/Users/nikolaiilodenos/Desktop/TCI.tif"
 
-# puts image.header
-
 puts "end"
-
-# Header
-# 0 - 1 : Order
-# 2 - 3 : 42
-# 4 - 7 : First IFD
-
-# Image File Directory
-# 0 - 1 : Tag
-# 2 - 3 : Type
-# 4 - 7 : Count
-# 8 - 11 : Offset
-
-# puts content[0..1]
-# ptr8 = content.to_unsafe.as Pointer(UInt8)
-# ptr16 = content.to_unsafe.as Pointer(UInt16)
-# ptr32 = content.to_unsafe.as Pointer(UInt32)
