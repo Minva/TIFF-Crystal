@@ -1,4 +1,6 @@
-# TODO: Write documentation for `Crystal::Tiff`
+require "json"
+
+# TODO : Write documentation for `Crystal::Tiff`
 module Tiff
   VERSION = "0.1.0"
 
@@ -18,12 +20,15 @@ module Tiff
       raise "TIFF Image File Header size < 8 bytes" if data.size < 8
       @id_order = data[0..1]
       raise "TIFF Invalid Identification Byte Order" unless self.byte_order?
+      raise "TIFF Motorola byte onder unsupported" if @id_order == MOTOROLA_BYTE_ORDER
       @version_number = (data[2..3].not_nil!.to_unsafe.as Pointer(UInt16))[0]
       @offset = (data[4..7].not_nil!.to_unsafe.as Pointer(UInt32))[0]
     end
   end
 
   class DirectoryEntry
+    include JSON::Serializable
+
     getter tag : UInt16
     getter type : UInt16
     getter count : UInt32
@@ -65,7 +70,7 @@ module Tiff
 
   class Tiff
     @file : File | Nil = nil
-    @ifd : Array(ImageFileDirectory) = Array(ImageFileDirectory).new
+    @ifds : Array(ImageFileDirectory) = Array(ImageFileDirectory).new
 
     getter header : ImageFileHeader | Nil = nil
 
@@ -73,6 +78,7 @@ module Tiff
       @file = File.new path
       @header = ImageFileHeader.new @file.not_nil!.gets(8).not_nil!
       self.load_image_file_directories
+      self.load_metadata
     end
   
     def initialize(uri : URI)
@@ -80,16 +86,25 @@ module Tiff
     end
 
     ###########################################################################
-    # Private
+    # Private method of class
     ###########################################################################
 
     private def load_image_file_directories
       offset = @header.not_nil!.offset
       loop do
         imgFDir = ImageFileDirectory.new @file.not_nil!, offset
-        @ifd << imgFDir
+        @ifds << imgFDir
         break if imgFDir.offset == 0
         offset = imgFDir.offset
+      end
+    end
+
+    private def load_metadata
+      @ifds.each do |ifd|
+        ifd.directory_entries.each do |dirEntry|
+          puts "--------------------------------"
+          puts dirEntry.to_pretty_json
+        end
       end
     end
 
