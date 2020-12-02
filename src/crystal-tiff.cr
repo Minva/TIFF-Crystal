@@ -61,7 +61,7 @@ module Tiff
         itr = itr + 1
       end
       @offset = if @directory_entries[@number_entries - 1].tag == 0
-        0.to_u32
+        0_u32
       else
         (@file.gets(4).not_nil!.to_unsafe.as Pointer(UInt32))[0]
       end
@@ -104,11 +104,52 @@ module Tiff
         ifd.directory_entries.each do |dirEntry|
           next if dirEntry.tag == 0
           puts "--------------------------------"
-          self.tag_call_to_function dirEntry.tag
+          self.tag_call_to_function dirEntry
           puts self.tag_to_s dirEntry.tag
           puts dirEntry.to_pretty_json
         end
       end
+    end
+
+    private def type_sizeof(type : UInt16)
+      case type
+      when 1, 2, 6, 7 then return 1
+      when 3, 8 then return 2
+      when 4, 9, 11 then return 4
+      when 5, 10, 12 then return 8
+      else
+        raise "TIFF DirectoryEntry Type Unsuppoted"
+      end
+    end
+
+    # INFO : This fonction convert a section of data in Array on certain type
+    private def value_section_to_data(dirEntry : DirectoryEntry, section : String)
+      {% begin %}
+        {%
+          types = [
+            [ 1, UInt32 ], [ 2, String ], [ 3, UInt16 ], [ 4, UInt32 ],
+            [ 5, UInt64 ], [ 6, Int8 ], [ 7, Bytes ], [ 8, Int16 ],
+            [ 9, Int32 ], [ 10, Int64 ], [ 11, Float32 ], [ 12, Float64 ]
+          ]
+        %}
+        case dirEntry.type
+        {% for elem in types %}
+          when {{ elem[0] }}
+          {% if elem[1] == String %}
+            return section
+          {% else %}
+            data = [] of {{ elem[1] }}
+            itr = 0            
+            ptr = section.to_unsafe.as Pointer({{ elem[1] }})
+            while itr < dirEntry.count
+              data << ptr[itr]
+              itr = itr + 1               
+            end
+            return data
+          {% end %}
+        {% end %}
+        end
+      {% end %}
     end
 
     {% begin %}
@@ -449,19 +490,30 @@ module Tiff
         {% for name in description["name"] %}
           {% suffix = suffix + "_#{ name.id }" %}
         {% end %}
-        private def load_metadata{{suffix.id}}
-          puts {{suffix}}
+        private def load_value{{suffix.id}}(dirEntry : DirectoryEntry)
+          # TODO : raise if the type is wrong
+          # dirEntry.type
+          puts dirEntry.count
+          if dirEntry.count < 2
+            v = dirEntry.offset
+            puts self.value_section_to_data dirEntry, String.new((pointerof(v)).as Pointer(UInt8), 4)            
+          else
+            nbrByte = dirEntry.count * self.type_sizeof dirEntry.type
+            puts nbrByte
+            @file.not_nil!.pos = dirEntry.offset
+            puts self.value_section_to_data dirEntry, @file.not_nil!.gets(nbrByte).not_nil!
+          end
         end
       {% end %}
 
-      private def tag_call_to_function(tag : UInt16)
-        case tag
+      private def tag_call_to_function(dirEntry : DirectoryEntry)
+        case dirEntry.tag
         {% for description in descriptions %}
           {% suffix = "" %}
           {% for name in description["name"] %}
             {% suffix = suffix + "_#{ name.id }" %}
           {% end %}
-          when {{description["tag"]}} then self.load_metadata{{suffix.id}} 
+          when {{description["tag"]}} then self.load_value{{suffix.id}}(dirEntry)
         {% end %}
         else
           raise "TIFF DirectoryEntry Tag Unsuppoted"
@@ -501,23 +553,6 @@ module Tiff
       when 10 then return "SRATIONAL" # Two SLONG’s: the first represents the numerator of a fraction, the second the denominator.
       when 11 then return "FLOAT" # Single precision (4-byte) IEEE format.
       when 12 then return "DOUBLE" # Double precision (8-byte) IEEE format.
-      end
-    end
-
-    private def type_to_type(value : UInt16)
-      case value
-      when 1 then return UInt8 # 8-bit unsigned integer.
-      when 2 then return String # 8-bit byte that contains a 7-bit ASCII code; the last byte must be NUL (binary zero).
-      when 3 then return UInt16 # 16-bit (2-byte) unsigned integer
-      when 4 then return UInt32 # 32-bit (4-byte) unsigned integer
-      when 5 then return UInt64 # Two LONGs: the first represents the numerator of a fraction; the second, the denominator.
-      when 6 then return Int8 # An 8-bit signed (twos-complement) integer.
-      when 7 then return "UNDEFINED" # An 8-bit byte that may contain anything, depending on the definition of the field.
-      when 8 then return Int16 # A 16-bit (2-byte) signed (twos-complement) integer.
-      when 9 then return Int32 # A 32-bit (4-byte) signed (twos-complement) integer.
-      when 10 then return Int64 # Two SLONG’s: the first represents the numerator of a fraction, the second the denominator.
-      when 11 then return Float32 # Single precision (4-byte) IEEE format.
-      when 12 then return Float64 # Double precision (8-byte) IEEE format.
       end
     end
 
