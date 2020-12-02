@@ -123,7 +123,7 @@ module Tiff
     end
 
     # INFO : This fonction convert a section of data in Array on certain type
-    private def value_section_to_data(dirEntry : DirectoryEntry, section : String)
+    private def value_section_to_data(dirEntry : DirectoryEntry, section : Array(UInt8))
       {% begin %}
         {%
           types = [
@@ -139,11 +139,11 @@ module Tiff
             return section
           {% else %}
             data = [] of {{ elem[1] }}
-            itr = 0            
+            itr = 0
             ptr = section.to_unsafe.as Pointer({{ elem[1] }})
             while itr < dirEntry.count
               data << ptr[itr]
-              itr = itr + 1               
+              itr = itr + 1
             end
             return data
           {% end %}
@@ -495,13 +495,19 @@ module Tiff
           # dirEntry.type
           puts dirEntry.count
           if dirEntry.count < 2
-            v = dirEntry.offset
-            puts self.value_section_to_data dirEntry, String.new((pointerof(v)).as Pointer(UInt8), 4)            
+            value = dirEntry.offset
+            ptrValue = pointerof(value).as Pointer(UInt8)
+            bytes = Array(UInt8).new 4 { |index| ptrValue[index] }
+            data = self.value_section_to_data dirEntry, bytes
+            # puts 
           else
             nbrByte = dirEntry.count * self.type_sizeof dirEntry.type
-            puts nbrByte
             @file.not_nil!.pos = dirEntry.offset
-            puts self.value_section_to_data dirEntry, @file.not_nil!.gets(nbrByte).not_nil!
+            bytes = Array(UInt8).new nbrByte do
+              @file.not_nil!.read_byte.not_nil!
+            end
+            data = self.value_section_to_data dirEntry, bytes
+            puts data
           end
         end
       {% end %}
@@ -527,7 +533,7 @@ module Tiff
           {% for name in description["name"] %}
             {% nameTag = nameTag + "#{ name.titleize.id }" %}
           {% end %}
-          when {{description["tag"]}} then return "{{nameTag.id}}" 
+          when {{description["tag"]}} then return "{{nameTag.id}}"
         {% end %}
         else
           raise "TIFF DirectoryEntry Tag Unsuppoted"
