@@ -3,6 +3,7 @@
 Documentation
 - https://www.itu.int/itudoc/itu-t/com16/tiff-fx/docs/tiff6.pdf
 - https://www.loc.gov/preservation/digital/formats/content/tiff_tags.shtml
+- https://www.awaresystems.be/imaging/tiff/specification/TIFFphotoshop.pdf
 
 ## Installation
 
