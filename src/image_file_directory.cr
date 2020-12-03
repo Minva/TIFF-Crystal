@@ -1,4 +1,4 @@
-require "./DirectoryEntry"
+require "./directory_entry"
 
 class Tiff::ImageFileDirectory
   @file : File

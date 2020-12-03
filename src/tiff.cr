@@ -1,8 +1,8 @@
-require "./macroConstants"
-require "./DirectoryEntry"
-require "./ImageFileDirectory"
-require "./ImageFileHeader"
-require "./Tile"
+require "./directory_entry"
+require "./image_file_directory"
+require "./image_file_header"
+require "./macro_constants"
+require "./tile"
 
 class Tiff::Tiff
   @file : File | Nil = nil
@@ -208,6 +208,10 @@ class Tiff::Tiff
     ti = Tile.new @file.not_nil!, 0, offset, byteCounts
   end
 end
+
+###############################################################################
+# TESTING PART
+###############################################################################
 
 image = Tiff::Tiff.new "/Users/nikolaiilodenos/Desktop/TCI.tif"
 image.tile 0
