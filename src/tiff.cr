@@ -1,7 +1,10 @@
 require "./directory_entry"
+require "./image"
 require "./image_file_directory"
 require "./image_file_header"
 require "./macro_constants"
+require "./pixel_format"
+require "./resolution"
 require "./tile"
 
 class Tiff::Tiff
@@ -20,6 +23,10 @@ class Tiff::Tiff
 
   def initialize(uri : URI)
     raise "TIFF load from URI not supported"
+  end
+
+  def initialize(data : Bytes, resolution : Resolution , pixelFormat : PixelFormat)
+    # TODO: Rebuild a image on Tiff Format
   end
 
   #############################################################################
@@ -200,12 +207,25 @@ class Tiff::Tiff
   # Public method of class
   #############################################################################
 
+  def crop(xStart : UInt32, yStart : UInt32, xEnd : UInt32, yEnd : UInt32) : Tiff::Image
+    # TODO : Crop in Image
+  end
+
   def tile(id : UInt32)
     offset = @metadata[324][0].as UInt32
     byteCounts = @metadata[325][0].as UInt32
     # @file : File, @compression : UInt16, @offset : UInt32, @byteCounts : UInt32
     puts byteCounts
-    ti = Tile.new @file.not_nil!, 0, offset, byteCounts
+    Tile.new @file.not_nil!, 8, offset, byteCounts
+  end
+
+  def save(path : String)
+    # TODO : save as file
+    # self.to_package
+  end
+
+  def to_package : Bytes
+    # TODO : Convert in file already for save as File
   end
 end
 
@@ -213,7 +233,7 @@ end
 # TESTING PART
 ###############################################################################
 
-image = Tiff::Tiff.new "/Users/nikolaiilodenos/Desktop/TCI.tif"
-image.tile 0
+imgTiff = Tiff::Tiff.new "/Users/nikolaiilodenos/Desktop/TCI.tif"
+tile = imgTiff.tile 0
 
 puts "end"
