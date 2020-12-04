@@ -23,6 +23,6 @@ class Tiff::ImageFileDirectory
       DirectoryEntry.new Bytes.new 12 { @file.read_byte.not_nil! }
     end
     return if @directory_entries[@number_entries - 1].tag == 0
-    @offset = (@file.gets(4).not_nil!.to_unsafe.as Pointer(UInt32))[0]
+    @offset = ((Bytes.new 4 { @file.read_byte.not_nil! }).to_unsafe.as Pointer(UInt32))[0]
   end
 end
