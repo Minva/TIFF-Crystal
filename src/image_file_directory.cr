@@ -1,10 +1,18 @@
+require "json"
 require "./directory_entry"
 
 class Tiff::ImageFileDirectory
+  include JSON::Serializable
+
+  @[JSON::Field(ignore: true)]
   @file : File
 
+  @[JSON::Field(key: "directoryEntries")]
   getter directory_entries : Array(DirectoryEntry)
+
+  @[JSON::Field(key: "numberEntries")]
   getter number_entries : UInt16
+
   getter offset : UInt32 = 0_u32
 
   def initialize(@file : File, @offset : UInt32)

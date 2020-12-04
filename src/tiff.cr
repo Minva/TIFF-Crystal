@@ -37,6 +37,10 @@ class Tiff::Tiff
     offset = @header.not_nil!.offset
     loop do
       imgFDir = ImageFileDirectory.new @file.not_nil!, offset
+
+      puts "-------------------------------------------------"
+      puts imgFDir.to_json
+      
       @ifds << imgFDir
       break if imgFDir.offset == 0
       offset = imgFDir.offset
@@ -132,42 +136,13 @@ class Tiff::Tiff
         raise "TIFF DirectoryEntry Tag Unsuppoted"
       end
     end
-
-    private def tag_to_s(tag : UInt16) : String
-      case tag
-      {% for description in DESCRIPTIONS %}
-        {% nameTag = "" %}
-        {% for name in description["name"] %}
-          {% nameTag = nameTag + "#{ name.titleize.id }" %}
-        {% end %}
-        when {{description["tag"]}} then return "{{nameTag.id}}"
-      {% end %}
-      else
-        raise "TIFF DirectoryEntry Tag Unsuppoted"
-      end
-    end
   {% end %}
 
   #############################################################################
   # It a Huge Messy & code write as shit
   #############################################################################
 
-  private def type_to_s(value : UInt16)
-    case value
-    when 1 then return "BYTE" # 8-bit unsigned integer.
-    when 2 then return "ASCII" # 8-bit byte that contains a 7-bit ASCII code; the last byte must be NUL (binary zero).
-    when 3 then return "SHORT" # 16-bit (2-byte) unsigned integer
-    when 4 then return "LONG" # 32-bit (4-byte) unsigned integer
-    when 5 then return "RATIONAL" # Two LONGs: the first represents the numerator of a fraction; the second, the denominator.
-    when 6 then return "SBYTE" # An 8-bit signed (twos-complement) integer.
-    when 7 then return "UNDEFINED" # An 8-bit byte that may contain anything, depending on the definition of the field.
-    when 8 then return "SSHORT" # A 16-bit (2-byte) signed (twos-complement) integer.
-    when 9 then return "SLONG" # A 32-bit (4-byte) signed (twos-complement) integer.
-    when 10 then return "SRATIONAL" # Two SLONG’s: the first represents the numerator of a fraction, the second the denominator.
-    when 11 then return "FLOAT" # Single precision (4-byte) IEEE format.
-    when 12 then return "DOUBLE" # Double precision (8-byte) IEEE format.
-    end
-  end
+  # private def type_to_s(value : UInt16)
 
   #############################################################################
   # Loader Value form Tag
@@ -209,6 +184,7 @@ class Tiff::Tiff
 
   def crop(xStart : UInt32, yStart : UInt32, xEnd : UInt32, yEnd : UInt32) : Tiff::Image
     # TODO : Crop in Image
+    # INFO : Not be sure if I do coding that here 'cause NewSubFile
   end
 
   def tile(id : UInt32)
@@ -226,6 +202,8 @@ class Tiff::Tiff
 
   def to_package : Bytes
     # TODO : Convert in file already for save as File
+    @header = ImageFileHeader.new INTEL_BYTE_ORDER, 42, 8 if @header == nil
+    # @ifds : Array(ImageFileDirectory) = Array(ImageFileDirectory).new
   end
 end
 

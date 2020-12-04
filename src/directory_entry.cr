@@ -1,10 +1,16 @@
 require "json"
+require "./tag"
+require "./type"
 
 class Tiff::DirectoryEntry
   include JSON::Serializable
 
+  @[JSON::Field(converter: Tiff::Tag)]
   getter tag : UInt16
+ 
+  @[JSON::Field(converter: Tiff::Type)]
   getter type : UInt16
+
   getter count : UInt32
   getter offset : UInt32
 

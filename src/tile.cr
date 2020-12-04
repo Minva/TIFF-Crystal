@@ -22,7 +22,7 @@ class Tiff::Tile
     @file.pos = @offset
     data = Bytes.new (@byteCounts.to_i) { @file.read_byte.not_nil! }
     case @compression
-    # when 1      
+    # when 1
     when 8
       reader = Compress::Zlib::Reader.new IO::Memory.new data
       return reader.gets_to_end.bytes
