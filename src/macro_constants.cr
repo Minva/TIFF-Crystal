@@ -162,12 +162,12 @@ module Tiff
     { "name" => [ "light", "source" ], "tag" => 37384, "type" => [ "" ] }, 
     { "name" => [ "flash" ], "tag" => 37385, "type" => [ "" ] }, 
     { "name" => [ "focal", "length" ], "tag" => 37386, "type" => [ "" ] }, 
-    { "name" => [ "flash", "energy" ], "tag" => 37387, "type" => [ "" ] }, 
-    { "name" => [ "spatial", "frequency", "response" ], "tag" => 37388, "type" => [ "" ] }, 
+    # { "name" => [ "flash", "energy" ], "tag" => 37387, "type" => [ "" ] },
+    # { "name" => [ "spatial", "frequency", "response" ], "tag" => 37388, "type" => [ "" ] }, 
     { "name" => [ "noise" ], "tag" => 37389, "type" => [ "" ] }, 
-    { "name" => [ "focal", "plane", "x", "resolution" ], "tag" => 37390, "type" => [ "" ] }, 
-    { "name" => [ "focal", "plane", "y", "resolution" ], "tag" => 37391, "type" => [ "" ] }, 
-    { "name" => [ "focal", "plane", "resolution", "unit" ], "tag" => 37392, "type" => [ "" ] }, 
+    # { "name" => [ "focal", "plane", "x", "resolution" ], "tag" => 37390, "type" => [ "" ] },
+    # { "name" => [ "focal", "plane", "y", "resolution" ], "tag" => 37391, "type" => [ "" ] },
+    # { "name" => [ "focal", "plane", "resolution", "unit" ], "tag" => 37392, "type" => [ "" ] },
     { "name" => [ "image", "number" ], "tag" => 37393, "type" => [ "" ] }, 
     { "name" => [ "security", "classification" ], "tag" => 37394, "type" => [ "" ] }, 
     { "name" => [ "image", "history" ], "tag" => 37395, "type" => [ "" ] }, 
@@ -197,12 +197,12 @@ module Tiff
     { "name" => [ "focal", "plane", "x", "resolution" ], "tag" => 41486, "type" => [ "" ] }, 
     { "name" => [ "focal", "plane", "y", "resolution" ], "tag" => 41487, "type" => [ "" ] }, 
     { "name" => [ "focal", "plane", "resolution", "unit" ], "tag" => 41488, "type" => [ "" ] }, 
-    { "name" => [ "subject", "location" ], "tag" => 41492, "type" => [ "" ] }, 
-    { "name" => [ "exposure", "index" ], "tag" => 41493, "type" => [ "" ] }, 
-    { "name" => [ "sensing", "method" ], "tag" => 41495, "type" => [ "" ] }, 
+    # { "name" => [ "subject", "location" ], "tag" => 41492, "type" => [ "" ] }, 
+    # { "name" => [ "exposure", "index" ], "tag" => 41493, "type" => [ "" ] }, 
+    # { "name" => [ "sensing", "method" ], "tag" => 41495, "type" => [ "" ] }, 
     { "name" => [ "file", "source" ], "tag" => 41728, "type" => [ "" ] }, 
     { "name" => [ "scene", "type" ], "tag" => 41729, "type" => [ "" ] }, 
-    { "name" => [ "cfa", "pattern" ], "tag" => 41730, "type" => [ "" ] }, 
+    # { "name" => [ "cfa", "pattern" ], "tag" => 41730, "type" => [ "" ] },
     { "name" => [ "custom", "rendered" ], "tag" => 41985, "type" => [ "" ] }, 
     { "name" => [ "exposure", "mode" ], "tag" => 41986, "type" => [ "" ] }, 
     { "name" => [ "white", "balance" ], "tag" => 41987, "type" => [ "" ] }, 
@@ -228,7 +228,7 @@ module Tiff
     { "name" => [ "transformation" ], "tag" => 48130, "type" => [ "" ] }, 
     { "name" => [ "uncompressed" ], "tag" => 48131, "type" => [ "" ] }, 
     { "name" => [ "image", "type" ], "tag" => 48132, "type" => [ "" ] }, 
-    { "name" => [ "image", "width" ], "tag" => 48256, "type" => [ "" ] }, 
+    # { "name" => [ "image", "width" ], "tag" => 48256, "type" => [ "" ] }, 
     { "name" => [ "image", "height" ], "tag" => 48257, "type" => [ "" ] }, 
     { "name" => [ "width", "resolution" ], "tag" => 48258, "type" => [ "" ] },
     { "name" => [ "height", "resolution" ], "tag" => 48259, "type" => [ "" ] }, 
@@ -333,6 +333,16 @@ module Tiff
     { "name" => [ "raw", "to", "preview", "gain" ], "tag" => 51112, "type" => [ "" ] }, 
     { "name" => [ "default", "user", "crop" ], "tag" => 51125, "type" => [ "" ] }
   ]
+
+  {% begin %}
+    {% for description in DESCRIPTIONS %}
+      {% suffix = "" %}
+      {% for name in description["name"] %}
+        {% suffix = suffix + "_#{ name.upcase.id }" %}
+      {% end %}
+      TAG{{ suffix.id }} = {{ description["tag"] }}
+    {% end %}
+  {% end %}
 
   TYPES = [
     [ 1, UInt32 ], [ 2, String ], [ 3, UInt16 ], [ 4, UInt32 ], [ 5, UInt64 ],

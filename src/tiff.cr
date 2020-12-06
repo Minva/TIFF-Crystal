@@ -1,3 +1,5 @@
+require "uri"
+require "./alias"
 require "./directory_entry"
 require "./image"
 require "./image_file_directory"
@@ -10,13 +12,14 @@ require "./tile"
 class Tiff::Tiff
   @file : File | Nil = nil
   @ifds : Array(ImageFileDirectory) = Array(ImageFileDirectory).new
-  @metadata = Hash(UInt16, String | Array(Bytes) | Array(UInt16) | Array(UInt32) | Array(UInt64) | Array(Int8) | Array(Int16) | Array(Int32) | Array(Int64) | Array(Float32) | Array(Float64)).new
+  # The ID = 0 of metadata is File and > 0 is SubFile/NewSubFile
+  @metadata : MetaDataType = MetaDataType.new
 
   getter header : ImageFileHeader | Nil = nil
 
   def initialize(path : String)
     @file = File.new path
-    @header = ImageFileHeader.new Bytes.new 8 { @file.not_nil!.read_byte.not_nil! }
+    @header = ImageFileHeader.new Bytes.new 8 { @file.not_nil!.read_byte.not_nil! }    
     self.load_image_file_directories
     self.load_metadata
   end
@@ -26,6 +29,10 @@ class Tiff::Tiff
   end
 
   def initialize(data : Bytes, resolution : Resolution , pixelFormat : PixelFormat)
+    # TODO: Rebuild a image on Tiff Format
+  end
+
+  def initialize(image : Image)
     # TODO: Rebuild a image on Tiff Format
   end
 
@@ -48,11 +55,20 @@ class Tiff::Tiff
   end
 
   private def load_metadata
+    # TODO : Refactor 'cause I'vnt undertand how work the SubFile/NewSubFile system
+    subFileId = 0_u32
     @ifds.each do |ifd|
+
+      @metadata[subFileId] = {} of UInt16 => Array(String) | Array(Bytes) | Array(UInt16) | Array(UInt32) | Array(UInt64) | Array(Int8) | Array(Int16) | Array(Int32) | Array(Int64) | Array(Float32) | Array(Float64)
+
+
+
+
       ifd.directory_entries.each do |dirEntry|
         next if dirEntry.tag == 0
-        self.tag_call_to_function dirEntry
+        self.tag_call_to_function subFileId, dirEntry
       end
+      subFileId += 1
     end
   end
 
@@ -68,7 +84,7 @@ class Tiff::Tiff
   end
 
   # INFO : This fonction convert a section of data in Array on certain type
-  private def value_section_to_data(dirEntry : DirectoryEntry, section : Array(UInt8))
+  private def value_section_to_data(dirEntry : DirectoryEntry, section : Bytes)
     {% begin %}
       case dirEntry.type
       {% for type in TYPES %}
@@ -86,6 +102,8 @@ class Tiff::Tiff
           return data
         {% end %}
       {% end %}
+      else
+        raise "Tiff Value Section Data Type Unknow"
       end
     {% end %}
   end
@@ -96,40 +114,34 @@ class Tiff::Tiff
       {% for name in description["name"] %}
         {% suffix = suffix + "_#{ name.id }" %}
       {% end %}
-      private def load_value{{ suffix.id }}(dirEntry : DirectoryEntry)
+      private def load_value{{ suffix.id }}(subFileId : UInt32, dirEntry : DirectoryEntry)
         # TODO : raise if the type is wrong
         # dirEntry.type
         # TODO : Refactor this code as shit
         if dirEntry.count < 2
-          value = dirEntry.offset
-          ptrValue = pointerof(value).as Pointer(UInt8)
-          bytes = Array(UInt8).new 4 { |index| ptrValue[index] }
+          offset = dirEntry.offset
+          ptrValue = pointerof(offset).as Pointer(UInt8)
+          bytes = Bytes.new 4 { |index| ptrValue[index] }
           data = self.value_section_to_data dirEntry, bytes
+          @metadata[subFileId][dirEntry.tag] = data
         else
           nbrByte = dirEntry.count * self.type_sizeof dirEntry.type
           @file.not_nil!.pos = dirEntry.offset
-          bytes = Array(UInt8).new nbrByte do
-            @file.not_nil!.read_byte.not_nil!
-          end
+          bytes = Bytes.new (nbrByte.to_i) { @file.not_nil!.read_byte.not_nil! }
           data = self.value_section_to_data dirEntry, bytes
-          
-          #####################################################################
-          # TODO : Solve the Issue for the metadata
-          #####################################################################
-          
-          # @metadata[dirEntry.tag] = data.not_nil!
+          @metadata[subFileId][dirEntry.tag] = data
         end
       end
     {% end %}
 
-    private def tag_call_to_function(dirEntry : DirectoryEntry)
+    private def tag_call_to_function(subFileId : UInt32, dirEntry : DirectoryEntry)
       case dirEntry.tag
       {% for description in DESCRIPTIONS %}
         {% suffix = "" %}
         {% for name in description["name"] %}
           {% suffix = suffix + "_#{ name.id }" %}
         {% end %}
-        when {{ description["tag"] }} then self.load_value{{ suffix.id }}(dirEntry)
+        when {{ description["tag"] }} then self.load_value{{ suffix.id }}(subFileId, dirEntry)
       {% end %}
       else
         raise "TIFF DirectoryEntry Tag Unsuppoted"
@@ -180,12 +192,36 @@ class Tiff::Tiff
     # INFO : Not be sure if I do coding that here 'cause NewSubFile
   end
 
-  def tile(id : UInt32)
-    # offset = @metadata[324][0].as UInt32
-    # byteCounts = @metadata[325][0].as UInt32
-    # # @file : File, @compression : UInt16, @offset : UInt32, @byteCounts : UInt32
-    # puts byteCounts
-    # Tile.new @file.not_nil!, 8, offset, byteCounts
+  def tiles? : Boolean
+    # TODO : Mean if the tiff contents tiles 
+  end
+
+  def tiles : UInt16
+    # TODO : Reaturn the number tiles content 
+  end
+
+  # TODO : Create a function for create a certain number of tiles and size of the tilse
+
+  def tile(idSubFile : UInt32, idTile : UInt32)
+    # INFO :
+  end
+
+  def tile(idTile : UInt32) : Tile
+    # INFO : By default get the first file describe, for get a spetific tile
+    # form a certain SubFile/NewSubFile see tile(idSubFile : UInt32, idTile : UInt32)
+    # TODO : Develop again this function for check if already load
+
+    ###########################################################################
+    # Bullshit Test
+    ###########################################################################
+    
+    puts "============================================================="
+    # print @metadata
+
+    offset = @metadata[0][324][0].as UInt32
+    byteCounts = @metadata[0][325][0].as UInt32
+    compression = 8_u16 # Flag
+    Tile.new @file.not_nil!, compression, offset, byteCounts
   end
 
   def save(path : String)
@@ -197,6 +233,8 @@ class Tiff::Tiff
     # TODO : Convert in file already for save as File
     @header = ImageFileHeader.new INTEL_BYTE_ORDER, 42, 8 if @header == nil
     # @ifds : Array(ImageFileDirectory) = Array(ImageFileDirectory).new
+  
+    Bytes.new 1
   end
 end
 
@@ -206,5 +244,8 @@ end
 
 imgTiff = Tiff::Tiff.new "/Users/nikolaiilodenos/Desktop/TCI.tif"
 tile = imgTiff.tile 0
+image = tile.to_image
+newTiff = Tiff::Tiff.new image
+data = newTiff.to_package
 
 puts "end"
