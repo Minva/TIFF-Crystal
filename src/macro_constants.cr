@@ -333,4 +333,10 @@ module Tiff
     { "name" => [ "raw", "to", "preview", "gain" ], "tag" => 51112, "type" => [ "" ] }, 
     { "name" => [ "default", "user", "crop" ], "tag" => 51125, "type" => [ "" ] }
   ]
+
+  TYPES = [
+    [ 1, UInt32 ], [ 2, String ], [ 3, UInt16 ], [ 4, UInt32 ], [ 5, UInt64 ],
+    [ 6, Int8 ], [ 7, Bytes ], [ 8, Int16 ], [ 9, Int32 ], [ 10, Int64 ],
+    [ 11, Float32 ], [ 12, Float64 ]
+  ]
 end

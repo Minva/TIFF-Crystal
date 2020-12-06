@@ -39,7 +39,7 @@ class Tiff::Tiff
       imgFDir = ImageFileDirectory.new @file.not_nil!, offset
 
       puts "-------------------------------------------------"
-      puts imgFDir.to_json
+      puts imgFDir.to_pretty_json
       
       @ifds << imgFDir
       break if imgFDir.offset == 0
@@ -70,22 +70,15 @@ class Tiff::Tiff
   # INFO : This fonction convert a section of data in Array on certain type
   private def value_section_to_data(dirEntry : DirectoryEntry, section : Array(UInt8))
     {% begin %}
-      {%
-        types = [
-          [ 1, UInt32 ], [ 2, String ], [ 3, UInt16 ], [ 4, UInt32 ],
-          [ 5, UInt64 ], [ 6, Int8 ], [ 7, Bytes ], [ 8, Int16 ],
-          [ 9, Int32 ], [ 10, Int64 ], [ 11, Float32 ], [ 12, Float64 ]
-        ]
-      %}
       case dirEntry.type
-      {% for elem in types %}
-        when {{ elem[0] }}
-        {% if elem[1] == String %}
+      {% for type in TYPES %}
+        when {{ type[0] }}
+        {% if type[1] == String %}
           return String.new section.to_unsafe.as Pointer(UInt8)
         {% else %}
-          data = [] of {{ elem[1] }}
+          data = [] of {{ type[1] }}
           itr = 0
-          ptr = section.to_unsafe.as Pointer({{ elem[1] }})
+          ptr = section.to_unsafe.as Pointer({{ type[1] }})
           while itr < dirEntry.count
             data << ptr[itr]
             itr = itr + 1
@@ -103,9 +96,10 @@ class Tiff::Tiff
       {% for name in description["name"] %}
         {% suffix = suffix + "_#{ name.id }" %}
       {% end %}
-      private def load_value{{suffix.id}}(dirEntry : DirectoryEntry)
+      private def load_value{{ suffix.id }}(dirEntry : DirectoryEntry)
         # TODO : raise if the type is wrong
         # dirEntry.type
+        # TODO : Refactor this code as shit
         if dirEntry.count < 2
           value = dirEntry.offset
           ptrValue = pointerof(value).as Pointer(UInt8)
@@ -118,7 +112,12 @@ class Tiff::Tiff
             @file.not_nil!.read_byte.not_nil!
           end
           data = self.value_section_to_data dirEntry, bytes
-          @metadata[dirEntry.tag] = data.not_nil!
+          
+          #####################################################################
+          # TODO : Solve the Issue for the metadata
+          #####################################################################
+          
+          # @metadata[dirEntry.tag] = data.not_nil!
         end
       end
     {% end %}
@@ -130,19 +129,13 @@ class Tiff::Tiff
         {% for name in description["name"] %}
           {% suffix = suffix + "_#{ name.id }" %}
         {% end %}
-        when {{description["tag"]}} then self.load_value{{suffix.id}}(dirEntry)
+        when {{ description["tag"] }} then self.load_value{{ suffix.id }}(dirEntry)
       {% end %}
       else
         raise "TIFF DirectoryEntry Tag Unsuppoted"
       end
     end
   {% end %}
-
-  #############################################################################
-  # It a Huge Messy & code write as shit
-  #############################################################################
-
-  # private def type_to_s(value : UInt16)
 
   #############################################################################
   # Loader Value form Tag
@@ -188,11 +181,11 @@ class Tiff::Tiff
   end
 
   def tile(id : UInt32)
-    offset = @metadata[324][0].as UInt32
-    byteCounts = @metadata[325][0].as UInt32
-    # @file : File, @compression : UInt16, @offset : UInt32, @byteCounts : UInt32
-    puts byteCounts
-    Tile.new @file.not_nil!, 8, offset, byteCounts
+    # offset = @metadata[324][0].as UInt32
+    # byteCounts = @metadata[325][0].as UInt32
+    # # @file : File, @compression : UInt16, @offset : UInt32, @byteCounts : UInt32
+    # puts byteCounts
+    # Tile.new @file.not_nil!, 8, offset, byteCounts
   end
 
   def save(path : String)
