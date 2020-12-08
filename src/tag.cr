@@ -10,7 +10,7 @@ class Tiff::Tag
       {% for name in description["name"] %}
         {% nameTag = nameTag + "#{ name.titleize.id }" %}
       {% end %}
-      when {{description["tag"]}} then return "{{nameTag.id}}"
+      when {{ description["tag"] }} then return "{{ nameTag.id }}"
     {% end %}
     else
       raise "TIFF DirectoryEntry Tag Unsuppoted"
@@ -20,7 +20,7 @@ class Tiff::Tag
 
   def self.from_json(value : JSON::PullParser) : UInt16
     # INFO : Maybe Doesn't work
-    value.try(&.read_int ).try(&.to_i)
+    value.try(&.read_int).try(&.to_i)
   end
 
   def self.to_json(value : UInt16, json : JSON::Builder)

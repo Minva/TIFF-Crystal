@@ -15,6 +15,8 @@ class Tiff::Tiff
   # The ID = 0 of metadata is File and > 0 is SubFile/NewSubFile
   @metadata : MetaDataType = MetaDataType.new
 
+  @image : Image?
+
   getter header : ImageFileHeader | Nil = nil
 
   def initialize(path : String)
@@ -32,7 +34,7 @@ class Tiff::Tiff
     # TODO: Rebuild a image on Tiff Format
   end
 
-  def initialize(image : Image)
+  def initialize(@image : Image)
     # TODO: Rebuild a image on Tiff Format
   end
 
@@ -58,12 +60,7 @@ class Tiff::Tiff
     # TODO : Refactor 'cause I'vnt undertand how work the SubFile/NewSubFile system
     subFileId = 0_u32
     @ifds.each do |ifd|
-
-      @metadata[subFileId] = {} of UInt16 => Array(String) | Array(Bytes) | Array(UInt16) | Array(UInt32) | Array(UInt64) | Array(Int8) | Array(Int16) | Array(Int32) | Array(Int64) | Array(Float32) | Array(Float64)
-
-
-
-
+      @metadata[subFileId] = {} of UInt16 => Array(String) | Array(Bytes) | Array(UInt8) | Array(UInt16) | Array(UInt32) | Array(UInt64) | Array(Int8) | Array(Int16) | Array(Int32) | Array(Int64) | Array(Float32) | Array(Float64)
       ifd.directory_entries.each do |dirEntry|
         next if dirEntry.tag == 0
         self.tag_call_to_function subFileId, dirEntry
@@ -209,32 +206,127 @@ class Tiff::Tiff
   def tile(idTile : UInt32) : Tile
     # INFO : By default get the first file describe, for get a spetific tile
     # form a certain SubFile/NewSubFile see tile(idSubFile : UInt32, idTile : UInt32)
-    # TODO : Develop again this function for check if already load
+    raise "Tiff MetaData File or SubFile/NewSubFile Missing" unless @metadata[0]?
+    raise "Tiff MetaData Key : TAG_TILE_OFFSETS" unless @metadata[0][TAG_TILE_OFFSETS]?
+    raise "Tiff MetaData Key : TAG_TILE_BYTE_COUNTS" unless @metadata[0][TAG_TILE_BYTE_COUNTS]?
+    raise "Tiff MetaData Key : TAG_COMPRESSION" unless @metadata[0][TAG_COMPRESSION]?
 
-    ###########################################################################
-    # Bullshit Test
-    ###########################################################################
-    
-    puts "============================================================="
-    # print @metadata
-
-    offset = @metadata[0][324][0].as UInt32
-    byteCounts = @metadata[0][325][0].as UInt32
-    compression = 8_u16 # Flag
+    offset = @metadata[0][TAG_TILE_OFFSETS][0].as UInt32
+    byteCounts = @metadata[0][TAG_TILE_BYTE_COUNTS][0].as UInt32
+    compression = @metadata[0][TAG_COMPRESSION][0].as UInt16
     Tile.new @file.not_nil!, compression, offset, byteCounts
   end
 
   def save(path : String)
-    # TODO : save as file
-    # self.to_package
+    File.write path, self.to_package, mode: "w"
   end
+
+  #############################################################################
+  # PACKAGING 
+  #############################################################################
+
+
+
+
+  # ImageWidth 594
+  # ImageLength 376
+  # BitsPerSample
+  # Compression
+  # PhotometricInterpretation",
+  # StripOffsets
+  # Orientation
+  # 
+  # RowsPerStrip
+  # StripByteCounts
+  # XResolution
+  # YResolution
+  # PlanarConfiguration
+  # ResolutionUnit
+  # PageNumber
+  # Predictor
+  # WhitePoint
+  # PrimaryChromaticities",
+  # ExtraSamples
+
+
+
 
   def to_package : Bytes
     # TODO : Convert in file already for save as File
-    @header = ImageFileHeader.new INTEL_BYTE_ORDER, 42, 8 if @header == nil
+    header = ImageFileHeader.new INTEL_BYTE_ORDER, 42, 8
     # @ifds : Array(ImageFileDirectory) = Array(ImageFileDirectory).new
-  
-    Bytes.new 1
+    # Build the IFD first
+    # Use the relative postition before convertion in absolut
+    # virtualIFD
+    height = 1024_u32
+    witdh = 1024_u32
+    index = 0
+    # Need to coding a standar builder of DirectoryEntry
+    virtualIFD = ImageFileDirectory.new
+    # TAG_IMAGE_WIDTH
+    virtualIFD << DirectoryEntry.new TAG_IMAGE_WIDTH, TYPE_SHORT, 1, 1024
+    # TAG_IMAGE_LENGTH
+    virtualIFD << DirectoryEntry.new TAG_IMAGE_LENGTH, TYPE_SHORT, 1, 1024
+    # TAG_BITS_PER_SAMPLE
+    
+    # virtualIFD << DirectoryEntry.new TAG_BITS_PER_SAMPLE, TYPE_SHORT, 3, 0 ### NEED an OFFSET
+    
+    indexBPS = virtualIFD.number_entries - 1    
+    # TAG_COMPRESSION
+    virtualIFD << DirectoryEntry.new TAG_COMPRESSION, TYPE_SHORT, 1, 1 # 1 = Uncompressed
+    # TAG_PHOTOMETRIC_INTERPRETATION
+    virtualIFD << DirectoryEntry.new TAG_PHOTOMETRIC_INTERPRETATION, TYPE_SHORT, 1, 2 # 2 = RGB
+    # TAG_FILL_ORDER
+    virtualIFD << DirectoryEntry.new TAG_FILL_ORDER, TYPE_SHORT, 1, 1  
+    # TAG_SAMPLES_PER_PIXEL
+    virtualIFD << DirectoryEntry.new TAG_SAMPLES_PER_PIXEL, TYPE_SHORT, 1, 3 # 3 for each color RGB
+    # TAG_PLANAR_CONFIGURATION
+    virtualIFD << DirectoryEntry.new TAG_PLANAR_CONFIGURATION, TYPE_SHORT, 1, 1
+    # TAG_ROWS_PER_STRIP
+    # TODO : Calculate number of line of the images
+    virtualIFD << DirectoryEntry.new TAG_ROWS_PER_STRIP, TYPE_SHORT, 1, 1024
+    # TAG_STRIP_OFFSETS
+    virtualIFD << DirectoryEntry.new TAG_STRIP_OFFSETS, TYPE_LONG, 1, 0 ### NEED an OFFSET
+    index = virtualIFD.number_entries - 1
+    # TAG_STRIP_BYTE_COUNTS
+    byteCounts = 1024_u32 * 1024_u32 * 3_u32
+    virtualIFD << DirectoryEntry.new TAG_STRIP_BYTE_COUNTS, TYPE_LONG, 1_u32, byteCounts
+    ###########################################################################
+    # Convertion
+    ###########################################################################
+    # Management of the simple case with only one SubFile
+    nextFreeOffset = 0
+    dataHeader = header.to_data
+    nextFreeOffset += dataHeader.size
+    nextFreeOffset += 2 + (virtualIFD.number_entries * 12 + 4) - 1
+    # Loop do for each next Free Offset, actually the code mannage only one
+
+    # virtualIFD[indexBPS.to_u32].offset = (nextFreeOffset).to_u32
+    # puts nextFreeOffset
+    # nextFreeOffset += 3   
+    puts nextFreeOffset
+
+    virtualIFD[index.to_u32].offset = (nextFreeOffset).to_u32 + 1
+    virtualIFD.offset = 0
+    # puts @image.not_nil!.pixels.not_nil!
+
+    # Calculation of the next offset free 
+    dataPackage = dataHeader
+    dataPackage.concat virtualIFD.to_data
+
+    aBPS = [] of UInt8
+    aBPS << 8
+    aBPS << 8
+    aBPS << 8
+
+    # dataPackage.concat aBPS
+
+    maap = Array(UInt8).new (1024 * 1024 * 3) { 1_u8 }
+
+    dataPackage.concat maap
+    # dataPackage.concat @image.not_nil!.pixels.to_a
+    # puts dataPackage
+    Bytes.new (dataPackage.size) { |index| dataPackage[index] }
   end
 end
 
@@ -245,7 +337,14 @@ end
 imgTiff = Tiff::Tiff.new "/Users/nikolaiilodenos/Desktop/TCI.tif"
 tile = imgTiff.tile 0
 image = tile.to_image
+
+puts "test => #{ image }"
+
 newTiff = Tiff::Tiff.new image
-data = newTiff.to_package
+
+# newTiff.compression = 8
+
+# data = newTiff.to_package
+newTiff.save "/Users/nikolaiilodenos/Desktop/AAA.tiff"
 
 puts "end"

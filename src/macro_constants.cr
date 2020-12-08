@@ -1,6 +1,6 @@
 module Tiff
-  INTEL_BYTE_ORDER = "II"
-  MOTOROLA_BYTE_ORDER = "MM"
+  INTEL_BYTE_ORDER = Bytes.new "II".to_unsafe.as Pointer(UInt8), 2
+  MOTOROLA_BYTE_ORDER = Bytes.new "MM".to_unsafe.as Pointer(UInt8), 2
 
   DESCRIPTIONS = [
     { "name" => [ "new", "subfile", "type" ], "tag" => 254, "type" => [ "" ] },
@@ -340,13 +340,28 @@ module Tiff
       {% for name in description["name"] %}
         {% suffix = suffix + "_#{ name.upcase.id }" %}
       {% end %}
-      TAG{{ suffix.id }} = {{ description["tag"] }}
+      TAG{{ suffix.id }} = {{ description["tag"] }}_u16
     {% end %}
   {% end %}
 
   TYPES = [
-    [ 1, UInt32 ], [ 2, String ], [ 3, UInt16 ], [ 4, UInt32 ], [ 5, UInt64 ],
-    [ 6, Int8 ], [ 7, Bytes ], [ 8, Int16 ], [ 9, Int32 ], [ 10, Int64 ],
-    [ 11, Float32 ], [ 12, Float64 ]
+    [ 1, UInt8, "BYTE" ],
+    [ 2, String, "ASCII" ],
+    [ 3, UInt16, "SHORT" ],
+    [ 4, UInt32, "LONG" ],
+    [ 5, UInt64, "RATIONAL" ],
+    [ 6, Int8, "SBYTE" ],
+    [ 7, Bytes, "UNDEFINED" ],
+    [ 8, Int16, "SSHORT" ],
+    [ 9, Int32, "SLONG" ],
+    [ 10, Int64, "SRATIONAL" ],
+    [ 11, Float32, "FLOAT" ],
+    [ 12, Float64, "DOUBLE" ]
   ]
+
+  {% begin %}
+    {% for type in TYPES %}  
+      TYPE_{{ type[2].id }} = {{ type[0] }}_u16
+    {% end %}
+  {% end %}
 end

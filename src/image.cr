@@ -20,11 +20,6 @@ class Tiff::Image
   # Public Method of Class
   #############################################################################
 
-  def pixels(data : Bytes)
-    # TODO : Check if need flush @data before assignment
-    @data = data
-  end
-
   def flush
     # TODO : Data Flush form @data
   end
