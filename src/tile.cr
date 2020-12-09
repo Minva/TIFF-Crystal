@@ -5,6 +5,7 @@ require "./resolution"
 
 class Tiff::Tile
   @pixels : Bytes | Nil = nil
+  property raw : Bytes | Nil = nil
 
   property pixel_fomat : PixelFormat = PixelFormat.new PixelFormatOrder::RGB, 1
   property resolution : Resolution = Resolution.new 0, 0
@@ -21,6 +22,7 @@ class Tiff::Tile
   private def inflate : Bytes
     @file.pos = @offset
     data = Bytes.new (@byteCounts.to_i) { @file.read_byte.not_nil! }
+    @raw = data
     case @compression
     # when 1
     when 8

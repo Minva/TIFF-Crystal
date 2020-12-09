@@ -46,10 +46,8 @@ class Tiff::Tiff
     offset = @header.not_nil!.offset
     loop do
       imgFDir = ImageFileDirectory.new @file.not_nil!, offset
-
-      puts "-------------------------------------------------"
-      puts imgFDir.to_pretty_json
-      
+      # puts "-------------------------------------------------"
+      # puts imgFDir.to_pretty_json
       @ifds << imgFDir
       break if imgFDir.offset == 0
       offset = imgFDir.offset
@@ -210,22 +208,21 @@ class Tiff::Tiff
     raise "Tiff MetaData Key : TAG_TILE_OFFSETS" unless @metadata[0][TAG_TILE_OFFSETS]?
     raise "Tiff MetaData Key : TAG_TILE_BYTE_COUNTS" unless @metadata[0][TAG_TILE_BYTE_COUNTS]?
     raise "Tiff MetaData Key : TAG_COMPRESSION" unless @metadata[0][TAG_COMPRESSION]?
-
-    offset = @metadata[0][TAG_TILE_OFFSETS][0].as UInt32
-    byteCounts = @metadata[0][TAG_TILE_BYTE_COUNTS][0].as UInt32
+    offset = @metadata[0][TAG_TILE_OFFSETS][idTile].as UInt32
+    byteCounts = @metadata[0][TAG_TILE_BYTE_COUNTS][idTile].as UInt32
     compression = @metadata[0][TAG_COMPRESSION][0].as UInt16
     Tile.new @file.not_nil!, compression, offset, byteCounts
   end
 
-  def save(path : String)
-    File.write path, self.to_package, mode: "w"
+  def save(path : String, rrr)
+    File.write path, self.to_package(rrr), mode: "w"
   end
 
   #############################################################################
   # PACKAGING 
   #############################################################################
 
-  def to_package : Bytes
+  def to_package(rrr) : Bytes
     # TODO : Convert in file already for save as File
     header = ImageFileHeader.new INTEL_BYTE_ORDER, 42, 8
     # @ifds : Array(ImageFileDirectory) = Array(ImageFileDirectory).new
@@ -236,49 +233,25 @@ class Tiff::Tiff
     witdh = 1024_u32
     index = 0
     # Need to coding a standar builder of DirectoryEntry
-    
     ###########################################################################
     # BUILD IMAGE FILE DIRECTORY
     ###########################################################################    
     virtualIFD = ImageFileDirectory.new
-
-    # TAG_IMAGE_WIDTH
     virtualIFD << DirectoryEntry.new TAG_IMAGE_WIDTH, TYPE_SHORT, 1, 1024
-
-    # TAG_IMAGE_LENGTH
     virtualIFD << DirectoryEntry.new TAG_IMAGE_LENGTH, TYPE_SHORT, 1, 1024
-    
-    # TAG_BITS_PER_SAMPLE
     virtualIFD << DirectoryEntry.new TAG_BITS_PER_SAMPLE, TYPE_SHORT, 3, 0 ### NEED an OFFSET
     indexBPS = virtualIFD.number_entries - 1
-
-    # TAG_COMPRESSION
-    virtualIFD << DirectoryEntry.new TAG_COMPRESSION, TYPE_SHORT, 1, 1 # 1 = Uncompressed
-
-    # TAG_PHOTOMETRIC_INTERPRETATION
+    virtualIFD << DirectoryEntry.new TAG_COMPRESSION, TYPE_SHORT, 1, 8 # 1 = Uncompressed
     virtualIFD << DirectoryEntry.new TAG_PHOTOMETRIC_INTERPRETATION, TYPE_SHORT, 1, 2 # 2 = RGB
-
-    # TAG_FILL_ORDER
-    # virtualIFD << DirectoryEntry.new TAG_FILL_ORDER, TYPE_SHORT, 1, 1  
-
-    # TAG_SAMPLES_PER_PIXEL
     virtualIFD << DirectoryEntry.new TAG_SAMPLES_PER_PIXEL, TYPE_SHORT, 1, 3 # 3 for each color RGB
-
-    # TAG_PLANAR_CONFIGURATION
-    virtualIFD << DirectoryEntry.new TAG_PLANAR_CONFIGURATION, TYPE_SHORT, 1, 1
-
-    # TAG_ROWS_PER_STRIP
+    virtualIFD << DirectoryEntry.new TAG_PREDICTOR, TYPE_SHORT, 1, 2
     # TODO : Calculate number of line of the images
     virtualIFD << DirectoryEntry.new TAG_ROWS_PER_STRIP, TYPE_SHORT, 1, 1024
-
-    # TAG_STRIP_OFFSETS
     virtualIFD << DirectoryEntry.new TAG_STRIP_OFFSETS, TYPE_LONG, 1, 0 ### NEED an OFFSET
     index = virtualIFD.number_entries - 1
-
-    # TAG_STRIP_BYTE_COUNTS
-    byteCounts = 1024_u32 * 1024_u32 * 3_u32
-    virtualIFD << DirectoryEntry.new TAG_STRIP_BYTE_COUNTS, TYPE_LONG, 1_u32, byteCounts
-
+    byteCounts = rrr.size
+    # byteCounts = 1024_u32 * 1024_u32 * 3_u32
+    virtualIFD << DirectoryEntry.new TAG_STRIP_BYTE_COUNTS, TYPE_LONG, 1_u32, byteCounts.to_u32
     ###########################################################################
     # Convertion
     ###########################################################################
@@ -288,38 +261,21 @@ class Tiff::Tiff
     nextFreeOffset += dataHeader.size
     nextFreeOffset += 2 + (virtualIFD.number_entries * 12 + 4)
     # Loop do for each next Free Offset, actually the code mannage only one
-
     virtualIFD[indexBPS.to_u32].offset = (nextFreeOffset).to_u32
-
     nextFreeOffset += 6
-
     virtualIFD[index.to_u32].offset = (nextFreeOffset).to_u32
     virtualIFD.offset = 0
-
     # Calculation of the next offset free 
     dataPackage = dataHeader
     dataPackage.concat virtualIFD.to_data
-
-
     val = 8_u16
-    dataPackage.concat  [ (pointerof(val).as Pointer(UInt8))[0] ]
-    dataPackage.concat  [ (pointerof(val).as Pointer(UInt8))[1] ]
-    dataPackage.concat  [ (pointerof(val).as Pointer(UInt8))[0] ]
-    dataPackage.concat  [ (pointerof(val).as Pointer(UInt8))[1] ]
-    dataPackage.concat  [ (pointerof(val).as Pointer(UInt8))[0] ]
-    dataPackage.concat  [ (pointerof(val).as Pointer(UInt8))[1] ]
-
-    # dataPackage.concat Array(UInt8).new (1024 * 1024 * 3) {  255_u8 }
-    img = @image.not_nil!.pixels.to_a
-    dataPackage.concat img
-
-   
-
-    puts "img size : #{ img.size }"
-
-    puts img[0..11]
-
-
+    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
+    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
+    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
+    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
+    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
+    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
+    dataPackage.concat Array(UInt8).new (rrr.size) { |index| rrr[index] }
     Bytes.new (dataPackage.size) { |index| dataPackage[index] }
   end
 end
@@ -331,14 +287,8 @@ end
 imgTiff = Tiff::Tiff.new "/Users/nikolaiilodenos/Desktop/TCI.tif"
 tile = imgTiff.tile 0
 image = tile.to_image
-
-puts "test => #{ image }"
-
 newTiff = Tiff::Tiff.new image
-
 # newTiff.compression = 8
-
 # data = newTiff.to_package
-newTiff.save "/Users/nikolaiilodenos/Desktop/AAA.tiff"
-
-puts "end"
+# INFO : Remove the raw just for be work
+newTiff.save "/Users/nikolaiilodenos/Desktop/AAA.tiff", tile.raw.not_nil!
