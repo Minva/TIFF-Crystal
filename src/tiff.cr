@@ -292,3 +292,103 @@ newTiff = Tiff::Tiff.new image
 # data = newTiff.to_package
 # INFO : Remove the raw just for be work
 newTiff.save "/Users/nikolaiilodenos/Desktop/AAA.tiff", tile.raw.not_nil!
+
+###############################################################################
+# DEMO Server
+###############################################################################
+
+module Layer::RESTful
+  class API
+    @server : HTTP::Server
+
+    def initialize(@host : String, @port : Int32)
+      @server = HTTP::Server.new do |context|
+        api = Endpoint.new context
+        api.run
+      end
+    end
+
+    def run
+      spawn do
+        @server.bind_tcp @host, @port
+        @server.listen
+      end
+    end
+
+    def stop
+      @server.close
+    end
+
+    def wait_mount
+      interval = Time::Span.new(nanoseconds: 1000)
+      until @server.listening?
+        sleep interval
+      end
+    end
+  end
+end
+
+require "bedrock"
+require "json"
+
+module Layer::RESTful
+  class Endpoint < Bedrock::Routing
+    @response : HTTP::Server::Response
+    @request : HTTP::Request?
+    @startTime : Time::Span = Time.monotonic
+
+    def initialize(@context : HTTP::Server::Context)
+      @request = context.request
+      @response = context.response
+    end
+
+    ############################################################################
+    # Private
+    ############################################################################
+
+    private def generic_response(message : String, statusCode : Int32)
+      @response.content_type = "application/json"
+      @response.status_code = statusCode
+      cost = (Time.monotonic - @startTime).nanoseconds
+      @response.print %({"msg":#{message},"cost":#{cost}})
+    end
+
+    private def image
+      get "/image/mgrs/50SNF/:id/sentinel-2b/TCI/1606237000.tiff" do |params|
+        imgTiff = Tiff::Tiff.new "/Users/nikolaiilodenos/Desktop/TCI.tif"
+        tile = imgTiff.tile params["id"].to_u32
+        image = tile.to_image
+        newTiff = Tiff::Tiff.new image
+        # newTiff.compression = 8
+        # data = newTiff.to_package
+        # INFO : Remove the raw just for be work
+        # newTiff.save "/Users/nikolaiilodenos/Desktop/AAA.tiff", tile.raw.not_nil!
+        @response.content_type = "image/tiff"
+        @response.write newTiff.to_package(tile.raw.not_nil!)
+      end
+    end
+
+    private def not_found
+      self.generic_response "404", 200
+    end
+
+    ############################################################################
+    # Public
+    ############################################################################
+
+    def run
+      @startTime = Time.monotonic
+      self.image
+      dead_links { self.not_found }
+    end
+  end
+end
+
+host = "0.0.0.0"
+port = 8080
+
+apiRESTful = Layer::RESTful::API.new host, port
+spawn apiRESTful.run
+apiRESTful.wait_mount
+puts "Service KisharLink run on #{host}:#{port}"
+sleep
