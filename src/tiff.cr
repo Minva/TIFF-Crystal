@@ -182,6 +182,29 @@ class Tiff::Tiff
   # Public method of class
   #############################################################################
 
+  {% begin %}
+    {% for description in DESCRIPTIONS %}
+      {% nameFunction = "" %}
+      {% for name in description["name"] %}
+        {% nameFunction += "#{ name.id }" %}
+      {% end %}
+
+
+      def {{ nameFunction }}(idSubFile : UInt32)
+      
+        @metadata
+      end
+ 
+    end 
+
+    {% end %}
+  {% end %}
+
+
+
+
+
+
   def crop(xStart : UInt32, yStart : UInt32, xEnd : UInt32, yEnd : UInt32) : Tiff::Image
     # TODO : Crop in Image
     # INFO : Not be sure if I do coding that here 'cause NewSubFile
