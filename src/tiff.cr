@@ -109,9 +109,17 @@ class Tiff::Tiff
       {% for name in description["name"] %}
         {% suffix = suffix + "_#{ name.id }" %}
       {% end %}
+      
       private def load_value{{ suffix.id }}(subFileId : UInt32, dirEntry : DirectoryEntry)
-        # TODO : raise if the type is wrong
-        # dirEntry.type
+        {% condition = "" %}
+        {% insertOr = false %}
+        {% for type in description["type"] %}
+          {% if insertOr %}
+            {% condition += " || " %}
+          {% end %} 
+          {% condition += "dirEntry.type == #{ Type.convert_to_type description["name"] }" %}
+        {% end %}
+        raise "Tiff load value type #{ Type.convert_to_tag description["name"] } invalid" unless {{ condition.id }}
         # TODO : Refactor this code as shit
         if dirEntry.count < 2
           offset = dirEntry.offset
@@ -199,11 +207,6 @@ class Tiff::Tiff
 
     {% end %}
   {% end %}
-
-
-
-
-
 
   def crop(xStart : UInt32, yStart : UInt32, xEnd : UInt32, yEnd : UInt32) : Tiff::Image
     # TODO : Crop in Image
