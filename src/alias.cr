@@ -3,4 +3,6 @@ module Tiff
     Array(UInt8) | Array(UInt16) | Array(UInt32) | Array(UInt64) |
     Array(Int8) | Array(Int16) | Array(Int32) | Array(Int64) | Array(Float32) |
     Array(Float64)))
+
+  alias Description = Hash(UInt16, UInt16)
 end

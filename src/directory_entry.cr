@@ -5,7 +5,6 @@ require "./type"
 class Tiff::DirectoryEntry
   include JSON::Serializable
 
-
   @[JSON::Field(converter: Tiff::Tag)]
   getter tag : UInt16
  
@@ -32,6 +31,7 @@ class Tiff::DirectoryEntry
     ptrType = pointerof(@type).as Pointer(UInt8)
     ptrCount = pointerof(@count).as Pointer(UInt8)
     ptrOffset = pointerof(@offset).as Pointer(UInt8)
+    # TODO : Clean this SHIT
     data = Array(UInt8).new
     data << ptrTag[0]
     data << ptrTag[1]
