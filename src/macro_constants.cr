@@ -6,468 +6,667 @@ module Tiff
     {
       "name" => [ "new", "subfile", "type" ],
       "tag" => 254,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 1,
+      "default" => 0
     },
     {
       "name" => [ "subfile", "type" ],
       "tag" => 255,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "image", "width" ],
       "tag" => 256,
-      "type" => [ "SHORT", "LONG" ]
+      "type" => [ "SHORT", "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "image", "length" ],
       "tag" => 257,
-      "type" => [ "SHORT", "LONG" ]
+      "type" => [ "SHORT", "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "bits", "per", "sample" ],
       "tag" => 258,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 'N', # N = SamplesPerPixel
+      "default" => 1
     },
     {
       "name" => [ "compression" ],
       "tag" => 259,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 1 # No Compression
     },
     {
       "name" => [ "photometric", "interpretation" ],
       "tag" => 262,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "threshholding" ],
       "tag" => 263,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 1 # No Dithering
     },
     {
       "name" => [ "cell", "width" ],
       "tag" => 264,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "cell", "length" ],
       "tag" => 265,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "fill", "order" ],
       "tag" => 266,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 1 # Lower column values in higher order bits
     },
     {
       "name" => [ "document", "name" ],
       "tag" => 269,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "image", "description" ],
       "tag" => 270,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "make" ],
       "tag" => 271,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "model" ],
       "tag" => 272,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "strip", "offsets" ],
       "tag" => 273,
-      "type" => [ "SHORT", "LONG" ]
+      "type" => [ "SHORT", "LONG" ],
+      # N = StripsPerImage for PlanarConfiguration equal to 1;
+      # N = SamplesPerPixel * StripsPerImage for PlanarConfiguration equal to 2
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "orientation" ],
       "tag" => 274,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 1
     },
     {
       "name" => [ "samples", "per", "pixel" ],
       "tag" => 277,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 1
     },
     {
       "name" => [ "rows", "per", "strip" ],
       "tag" => 278,
-      "type" => [ "SHORT", "LONG" ]
+      "type" => [ "SHORT", "LONG" ],
+      "count" => 1,
+      "default" => 4294967295 # 2**32 - 1
     },
     {
       "name" => [ "strip", "byte", "counts" ],
       "tag" => 279,
-      "type" => [ "SHORT", "LONG" ]
+      "type" => [ "SHORT", "LONG" ],
+      # N = StripsPerImage for PlanarConfiguration equal to 1;
+      # N = SamplesPerPixel * StripsPerImage for PlanarConfiguration equal to 2
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "min", "sample", "value" ],
       "tag" => 280,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 'N', # N = SamplesPerPixel
+      "default" => 0
     },
     {
       "name" => [ "max", "sample", "value" ],
       "tag" => 281,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 'N', # N = SamplesPerPixel
+      # TODO : default do be defined by a Proc
+      "default" => nil # 2**(BitsPerSample) - 1
     },
     {
       "name" => [ "x", "resolution" ],
       "tag" => 282,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "y", "resolution" ],
       "tag" => 283,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "planar", "configuration" ],
       "tag" => 284,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 1 # Chunky
     },
     {
       "name" => [ "page", "name" ],
       "tag" => 285,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "dount" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "x", "position" ],
       "tag" => 286,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "y", "position" ],
       "tag" => 287,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "free", "offsets" ],
       "tag" => 288,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "free", "byte", "counts" ],
       "tag" => 289,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "gray", "response", "unit" ],
       "tag" => 290,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 2 # hundredths of a unit
     },
     {
       "name" => [ "gray", "response", "curve" ],
       "tag" => 291,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      # TODO : default do be defined by a Proc
+      "count" => nil, # 2**BitsPerSample
+      "default" => nil
     },
     {
       "name" => [ "t4", "options" ],
       "tag" => 292,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 1,
+      "default" => 0 # basic 1-dimensional coding
     },
     {
       "name" => [ "t6", "options" ],
       "tag" => 293,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 1,
+      "default" => 0
     },
     {
       "name" => [ "resolution", "unit" ],
       "tag" => 296,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 2 # Inch
     },
     {
       "name" => [ "page", "number" ],
       "tag" => 297,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 2,
+      "default" => nil
     },
-    {
-      "name" => [ "transfer", "function" ],
-      "tag" => 301,
-      "type" => [ "SHORT" ]
-    },
+    # {
+    #   "name" => [ "transfer", "function" ],
+    #   "tag" => 301,
+    #   "type" => [ "SHORT" ],
+    #   "count" => (1 or 3) * (1 << BitsPerSample)
+    #   "default" => A single table corresponding to the NTSC standard gamma value of 2.2.
+    # },
     {
       "name" => [ "software" ],
       "tag" => 305,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "date", "time" ],
       "tag" => 306,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 20, # The format is: "YYYY:MM:DD HH:MM:SS"
+      "default" => nil
     },
     {
       "name" => [ "artist" ],
       "tag" => 315,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "host", "computer" ],
       "tag" => 316,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "predictor" ],
       "tag" => 317,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 1 # No Prediction
     },
     {
       "name" => [ "white", "point" ],
       "tag" => 318,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 2,
+      "default" => nil
     },
     {
       "name" => [ "primary", "chromaticities" ],
       "tag" => 319,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 6,
+      "default" => nil
     },
     {
       "name" => [ "color", "map" ],
       "tag" => 320,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      # TODO : default do be defined by a Proc
+      "count" => nil, # 3 * (2**BitsPerSample)
+      "default" => nil
     },
     {
       "name" => [ "halftone", "hints" ],
       "tag" => 321,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 2,
+      "default" => nil
     },
     {
       "name" => [ "tile", "width" ],
       "tag" => 322,
-      "type" => [ "SHORT", "LONG" ]
+      "type" => [ "SHORT", "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "tile", "length" ],
       "tag" => 323,
-      "type" => [ "SHORT", "LONG" ]
+      "type" => [ "SHORT", "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "tile", "offsets" ],
       "tag" => 324,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      # N = TilesPerImage for PlanarConfiguration = 1;
+      # N = SamplesPerPixel * TilesPerImage for PlanarConfiguration = 2
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "tile", "byte", "counts" ],
       "tag" => 325,
-      "type" => [ "SHORT", "LONG" ]
+      "type" => [ "SHORT", "LONG" ],
+      # N = TilesPerImage for PlanarConfiguration = 1;
+      # N = SamplesPerPixel * TilesPerImage for PlanarConfiguration = 2
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "bad", "fax", "lines" ],
       "tag" => 326,
-      "type" => [ "SHORT", "LONG" ]
+      "type" => [ "SHORT", "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "clean", "fax", "data" ],
       "tag" => 327,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "consecutive", "bad", "fax", "lines" ],
       "tag" => 328,
-      "type" => [ "SHORT", "LONG" ]
+      "type" => [ "SHORT", "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     # {
     #   "name" => [ "sub", "ifds" ],
     #   "tag" => 330,
-    #   "type" => [ "LONG", "IFD" ]
+    #   "type" => [ "LONG", "IFD" ],
+    #   "count" => 'N', # Number of child IFDs
+    #   "default" => nil
     # },
     {
       "name" => [ "ink", "set" ],
       "tag" => 332,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 1 # CMYK
     },
     {
       "name" => [ "ink", "names" ],
       "tag" => 333,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N', # N = total number of characters in all the ink name strings, including the NULs
+      "default" => nil
     },
     {
       "name" => [ "number", "of", "inks" ],
       "tag" => 334,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 4
     },
-    {
-      "name" => [ "dot", "range" ],
-      "tag" => 336,
-      "type" => [ "BYTE", "SHORT" ]
-    },
+    # {
+    #   "name" => [ "dot", "range" ],
+    #   "tag" => 336,
+    #   "type" => [ "BYTE", "SHORT" ],
+    #   "count" => 2, or 2*SamplesPerPixel
+    #   "default" => [0,2**BitsPerSample-1]
+    # },
     {
       "name" => [ "target", "printer" ],
       "tag" => 337,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "extra", "samples" ],
       "tag" => 338,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "sample", "format" ],
       "tag" => 339,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 'N', # N = SamplesPerPixel
+      "default" => 1 # unsigned integer data
+
     },
-    {
-      "name" => [ "smin", "sample", "value" ],
-      "tag" => 340,
-      "type" => [ "BYTE", "SHORT", "LONG", "RATIONAL", "DOUBLE" ]
-    },
-    {
-      "name" => [ "smax", "sample", "value" ],
-      "tag" => 341,
-      "type" => [ "BYTE", "SHORT", "LONG", "RATIONAL", "DOUBLE" ]
-    },
+    # {
+    #   "name" => [ "smin", "sample", "value" ],
+    #   "tag" => 340,
+    #   "type" => [ "BYTE", "SHORT", "LONG", "RATIONAL", "DOUBLE" ],
+    #   "count" => 'N', # N = SamplesPerPixel
+    #   "default" => The minimum of the data type
+    # },
+    # {
+    #  "name" => [ "smax", "sample", "value" ],
+    #  "tag" => 341,
+    #  "type" => [ "BYTE", "SHORT", "LONG", "RATIONAL", "DOUBLE" ],
+    #  "count" => N = SamplesPerPixel
+    #  "default" => The maximum of the data type.
+    # },
     {
       "name" => [ "transfer", "range" ],
       "tag" => 342,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 6,
+      "default" => nil
     },
     {
       "name" => [ "clip", "path" ],
       "tag" => 343,
-      "type" => [ "BYTE" ]
+      "type" => [ "BYTE" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "x", "clip", "path", "units" ],
       "tag" => 344,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "y", "clip", "path", "units" ],
       "tag" => 345,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 1,
+      "default" => nil # Equal to XClipPathUnits
     },
     {
       "name" => [ "indexed" ],
       "tag" => 346,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 0 # Not Indexed
     },
     {
       "name" => [ "jpeg", "tables" ],
       "tag" => 347,
-      "type" => [ "UNDEFINED" ]
+      "type" => [ "UNDEFINED" ],
+      "count" => 'N', # N = number of bytes in tables datastream
+      "default" => nil
     },
     {
       "name" => [ "opi", "proxy" ],
       "tag" => 351,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 0
     },
     # {
     #   "name" => [ "global", "parameters", "ifd" ],
     #   "tag" => 400,
-    #   "type" => [ "LONG", "IFD" ]
+    #   "type" => [ "LONG", "IFD" ],
+    #   "count" => 1,
+    #   "default" => nil
     # },
     {
       "name" => [ "profile", "type" ],
       "tag" => 401,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "fax", "profile" ],
       "tag" => 402,
-      "type" => [ "BYTE" ]
+      "type" => [ "BYTE" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "coding", "methods" ],
       "tag" => 403,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "version", "year" ],
       "tag" => 404,
-      "type" => [ "BYTE" ]
+      "type" => [ "BYTE" ],
+      "count" => 4,
+      "default" => nil
     },
     {
       "name" => [ "mode", "number" ],
       "tag" => 405,
-      "type" => [ "BYTE" ]
+      "type" => [ "BYTE" ],
+      "count" => 1,
+      "default" => nil
     },
-    {
-      "name" => [ "decode" ],
-      "tag" => 433,
-      "type" => [ "SRATIONAL" ]
-    },
-    {
-      "name" => [ "default", "image", "color" ],
-      "tag" => 434,
-      "type" => [ "SHORT" ]
-    },
-    {
-      "name" => [ "jpeg", "proc" ],
-      "tag" => 512,
-      "type" => [ "SHORT" ]
-    },
+    # {
+    #   "name" => [ "decode" ],
+    #   "tag" => 433,
+    #   "type" => [ "SRATIONAL" ],
+    #   "count" => 2 * SamplesPerPixel (= 6, for ITULAB)
+    #   "default" => See Description
+    # },
+    # {
+    #   "name" => [ "default", "image", "color" ],
+    #   "tag" => 434,
+    #   "type" => [ "SHORT" ],
+    #   "count" => SamplesPerPixel
+    #   "default" => For the Foreground layer image, the default value is black.
+    #                For other cases, including the Background layer image, the default value is white.
+    # },
+    # {
+    #   "name" => [ "jpeg", "proc" ],
+    #   "tag" => 512,
+    #   "type" => [ "SHORT" ],
+    #   "count" => 1,
+    #   "default" => None according to specification, though we do recommend using 1 (baseline sequential) as a default in readers
+    # },
     {
       "name" => [ "jpeg", "interchange", "format" ],
       "tag" => 513,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "jpeg", "interchange", "format", "length" ],
       "tag" => 514,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "jpeg", "restart", "interval" ],
       "tag" => 515,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "jpeg", "lossless", "predictors" ],
       "tag" => 517,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 'N', # N = SamplesPerPixel
+      "default" => nil
     },
     {
       "name" => [ "jpeg", "point", "transforms" ],
       "tag" => 518,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 'N', # N = SamplesPerPixel
+      "default" => nil
     },
     {
       "name" => [ "jpeg", "q", "tables" ],
       "tag" => 519,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 'N', # N = SamplesPerPixel
+      "default" => nil
     },
     {
       "name" => [ "jpeg", "dc", "tables" ],
       "tag" => 520,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 'N', # N = SamplesPerPixel
+      "default" => nil
     },
     {
       "name" => [ "jpeg", "ac", "tables" ],
       "tag" => 521,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 'N', # N = SamplesPerPixel
+      "default" => nil
     },
     {
       "name" => [ "y", "cb", "cr", "coefficients" ],
       "tag" => 529,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 3,
+      "default" => [ ( 299 / 1000 ), ( 587 / 1000 ), ( 114 / 1000 ) ]
     },
     {
       "name" => [ "y", "cb", "cr", "sub", "Sampling" ],
       "tag" => 530,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 2,
+      "default" => [2, 2]
     },
     {
       "name" => [ "y", "cb", "cr", "positioning" ],
       "tag" => 531,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 1 # Centered
     },
     {
       "name" => [ "reference", "black", "white" ],
       "tag" => 532,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 6,
+      "default" => nil
     },
     {
       "name" => [ "strip", "row", "counts" ],
       "tag" => 559,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 'N', # Number of strips
+      "default" => nil
     },
     {
       "name" => [ "xmp" ],
       "tag" => 700,
-      "type" => [ "BYTE" ]
-    },    
+      "type" => [ "BYTE" ],
+      "count" => 'N',
+      "default" => nil
+    },
     # {
     #   "name" => [ "image", "rating" ],
     #   "tag" => 18246,
@@ -481,12 +680,16 @@ module Tiff
     {
       "name" => [ "image", "id" ],
       "tag" => 32781,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "wang", "annotation" ],
       "tag" => 32932,
-      "type" => [ "BYTE" ]
+      "type" => [ "BYTE" ],
+      "count" => 'N',
+      "default" => nil
     },
     # {
     #   "name" => [ "cfa", "repeat", "pattern", "dim" ],
@@ -506,91 +709,123 @@ module Tiff
     {
       "name" => [ "copyright" ],
       "tag" => 33432,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "exposure", "time" ],
       "tag" => 33434,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "f", "number" ],
       "tag" => 33437,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
-      "name" => [ "md", "file",
-      "tag" ],
+      "name" => [ "md", "file", "tag" ],
       "tag" => 33445,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 1,
+      "default" => 128 # Linear data format
     },
     {
       "name" => [ "md", "scale", "pixel" ],
       "tag" => 33446,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => 1
     },
     {
       "name" => [ "md", "color", "table" ],
       "tag" => 33447,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "md", "lab", "name" ],
       "tag" => 33448,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "md", "sample", "info" ],
       "tag" => 33449,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "md", "prep", "date" ],
       "tag" => 33450,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "md", "prep", "time" ],
       "tag" => 33451,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "md", "file", "units" ],
       "tag" => 33452,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
-      "name" => [ "model", "pixel", "scale",
-      "tag" ],
+      "name" => [ "model", "pixel", "scale", "tag" ],
       "tag" => 33550,
-      "type" => [ "DOUBLE" ]
+      "type" => [ "DOUBLE" ],
+      "count" => 3,
+      "default" => nil
     },
     {
-      "name" => [ "iptcnaa" ],
+      "name" => [ "iptc", "naa" ],
       "tag" => 33723,
-      "type" => [ "UNDEFINED", "BYTE" ]
+      "type" => [ "UNDEFINED", "BYTE" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
-      "name" => [ "ingr", "packet", "data",
-      "tag" ],
+      "name" => [ "ingr", "packet", "data", "tag" ],
       "tag" => 33918,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "ingr", "flag", "registers" ],
       "tag" => 33919,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 16,
+      "default" => nil
     },
+
     {
       "name" => [ "iras", "b", "transformation", "matrix" ],
       "tag" => 33920,
-      "type" => [ "DOUBLE" ]
+      "type" => [ "DOUBLE" ],
+      "count" => 17, # possibly 16, but unlikely
+      "default" => nil
     },
-    {
-      "name" => [ "model", "tiepoint", "tag" ],
-      "tag" => 33922,
-      "type" => [ "DOUBLE" ]
-    },
+    # {
+    #   "name" => [ "model", "tiepoint", "tag" ],
+    #   "tag" => 33922,
+    #   "type" => [ "DOUBLE" ],
+    #   "count" => N = 6*K, with K = number of tiepoints
+    #   "default" => nil
+    # },
     # {
     #   "name" => [ "site" ],
     #   "tag" => 34016,
@@ -694,68 +929,93 @@ module Tiff
     {
       "name" => [ "model", "transformation", "tag" ],
       "tag" => 34264,
-      "type" => [ "DOUBLE" ]
+      "type" => [ "DOUBLE" ],
+      "count" => 16,
+      "default" => nil
     },
     {
       "name" => [ "photoshop" ],
       "tag" => 34377,
-      "type" => [ "BYTE" ]
+      "type" => [ "BYTE" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "exif", "ifd" ],
       "tag" => 34665,
-      "type" => [ "LONG", "IFD" ]
+      "type" => [ "LONG", "IFD" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "inter", "color", "profile" ],
       "tag" => 34675,
-      "type" => [ "UNDEFINED" ]
+      "type" => [ "UNDEFINED" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "image", "layer" ],
       "tag" => 34732,
-      "type" => [ "SHORT", "LONG" ]
+      "type" => [ "SHORT", "LONG" ],
+      "count" => 2,
+      "default" => nil
     },
-    {
-      "name" => [ "geo", "key", "directory",
-      "tag" ],
-      "tag" => 34735,
-      "type" => [ "SHORT" ]
-    },
+    # {
+    #   "name" => [ "geo", "key", "directory", "tag" ],
+    #   "tag" => 34735,
+    #   "type" => [ "SHORT" ],
+    #   "count" => N >= 4
+    #   "default" => nil
+    # },
     {
       "name" => [ "geo", "double", "params", "tag" ],
       "tag" => 34736,
-      "type" => [ "DOUBLE" ]
+      "type" => [ "DOUBLE" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "geo", "ascii", "params", "tag" ],
       "tag" => 34737,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "exposure", "program" ],
       "tag" => 34850,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 0 # Not defined
     },
     {
       "name" => [ "spectral", "sensitivity" ],
       "tag" => 34852,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "gps", "info" ],
       "tag" => 34853,
-      "type" => [ "LONG", "IFD" ]
+      "type" => [ "LONG", "IFD" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "iso", "speed", "ratings" ],
       "tag" => 34855,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "oecf" ],
       "tag" => 34856,
-      "type" => [ "UNDEFINED" ]
+      "type" => [ "UNDEFINED" ],
+      "count" => 'N',
+      "default" => nil
     },
     # {
     #   "name" => [ "interlace" ],
@@ -805,93 +1065,132 @@ module Tiff
     {
       "name" => [ "hyla", "fax", "fax", "recv", "params" ],
       "tag" => 34908,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "hyla", "fax", "fax", "sub", "address" ],
       "tag" => 34909,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "hyla", "fax", "fax", "recv", "time" ],
       "tag" => 34910,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "exif", "version" ],
       "tag" => 36864,
-      "type" => [ "UNDEFINED" ]
+      "type" => [ "UNDEFINED" ],
+      "count" => 4,
+      "default" => [ 48, 50, 50, 48 ]
     },
     {
       "name" => [ "date", "time", "original" ],
       "tag" => 36867,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 20,
+      "default" => nil
     },
     {
       "name" => [ "date", "time", "digitized" ],
       "tag" => 36868,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 20,
+      "default" => nil
     },
     {
       "name" => [ "components", "configuration" ],
       "tag" => 37121,
-      "type" => [ "UNDEFINED" ]
+      "type" => [ "UNDEFINED" ],
+      "count" => 4,
+      "default" => [ 4, 5, 6, 0 ] # if RGB uncompressed; 1,2,3,0 otherwise
     },
     {
       "name" => [ "compressed", "bits", "per", "pixel" ],
       "tag" => 37122,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "shutter", "speed", "value" ],
       "tag" => 37377,
-      "type" => [ "SRATIONAL" ]
+      "type" => [ "SRATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "aperture", "value" ],
       "tag" => 37378,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "frightness", "value" ],
       "tag" => 37379,
-      "type" => [ "SRATIONAL" ]
+      "type" => [ "SRATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "exposure", "bias", "value" ],
       "tag" => 37380,
-      "type" => [ "SRATIONAL" ]
+      "type" => [ "SRATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "max", "aperture", "value" ],
       "tag" => 37381,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "subject", "distance" ],
       "tag" => 37382,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "metering", "mode" ],
       "tag" => 37383,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 0 # Unknown
     },
     {
       "name" => [ "light", "source" ],
       "tag" => 37384,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 0 # Unknown
     },
     {
       "name" => [ "flash" ],
       "tag" => 37385,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "focal", "length" ],
       "tag" => 37386,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
+
+
+
     # {
     #   "name" => [ "flash", "energy" ],
     #   "tag" => 37387,
@@ -937,11 +1236,13 @@ module Tiff
     #   "tag" => 37395,
     #   "type" => []
     # },
-    # {
-    #   "name" => [ "subject", "area" ],
-    #   "tag" => 37396,
-    #   "type" => [ "SHORT" ]
-    # },
+    {
+      "name" => [ "subject", "area" ],
+      "tag" => 37396,
+      "type" => [ "SHORT" ],
+      "count" => [ 2, 3, 4 ],
+      "default" => nil
+    },
     # {
     #   "name" => [ "exposure", "index" ],
     #   "tag" => 37397,
@@ -960,32 +1261,44 @@ module Tiff
     {
       "name" => [ "maker", "note" ],
       "tag" => 37500,
-      "type" => [ "UNDEFINED" ]
+      "type" => [ "UNDEFINED" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "user", "comment" ],
       "tag" => 37510,
-      "type" => [ "UNDEFINED" ]
+      "type" => [ "UNDEFINED" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "subsec", "time" ],
       "tag" => 37520,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "subsec", "time", "original" ],
       "tag" => 37521,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "subsec", "time", "digitized" ],
       "tag" => 37522,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "image", "source", "data" ],
       "tag" => 37724,
-      "type" => [ "UNDEFINED" ]
+      "type" => [ "UNDEFINED" ],
+      "count" => 'N',
+      "default" => nil
     },
     # {
     #   "name" => [ "xp", "title" ],
@@ -1015,154 +1328,212 @@ module Tiff
     {
       "name" => [ "flashpix", "version" ],
       "tag" => 40960,
-      "type" => [ "UNDEFINED" ]
+      "type" => [ "UNDEFINED" ],
+      "count" => 4,
+      "default" => [ 48, 49, 48, 48 ]
     },
     {
       "name" => [ "color", "space" ],
       "tag" => 40961,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "pixel", "x", "dimension" ],
       "tag" => 40962,
-      "type" => [ "SHORT", "LONG" ]
+      "type" => [ "SHORT", "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "pixel", "y", "dimension" ],
       "tag" => 40963,
-      "type" => [ "SHORT", "LONG" ]
+      "type" => [ "SHORT", "LONG" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "related", "sound", "file" ],
       "tag" => 40964,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 13,
+      "default" => nil
     },
     # {
     #   "name" => [ "interoperability", "ifd" ],
     #   "tag" => 40965,
-    #   "type" => [ "LONG", "IFD" ]
+    #   "type" => [ "LONG", "IFD" ],
+    #   "count" => 1,
+    #   "default" => nil
     # },
     {
       "name" => [ "flash", "energy" ],
       "tag" => 41483,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "spatial", "frequency", "response" ],
       "tag" => 41484,
-      "type" => [ "UNDEFINED" ]
+      "type" => [ "UNDEFINED" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "focal", "plane", "x", "resolution" ],
       "tag" => 41486,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "focal", "plane", "y", "resolution" ],
       "tag" => 41487,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "focal", "plane", "resolution", "unit" ],
       "tag" => 41488,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 2 # inch
     },
     {
       "name" => [ "subject", "location" ],
       "tag" => 41492,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 2,
+      "default" => nil
     },
     {
       "name" => [ "exposure", "index" ],
       "tag" => 41493,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "sensing", "method" ],
       "tag" => 41495,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "file", "source" ],
       "tag" => 41728,
-      "type" => [ "UNDEFINED" ]
+      "type" => [ "UNDEFINED" ],
+      "count" => 1,
+      "default" => 3 # Digital Still Camera
     },
     {
-      "name" => [ "scene",
-      "type" ],
+      "name" => [ "scene", "type" ],
       "tag" => 41729,
-      "type" => [ "UNDEFINED" ]
+      "type" => [ "UNDEFINED" ],
+      "count" => 1,
+      "default" => 1 # Directly photographed image
     },
     {
       "name" => [ "cfa", "pattern" ],
       "tag" => 41730,
-      "type" => [ "UNDEFINED" ]
+      "type" => [ "UNDEFINED" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "custom", "rendered" ],
       "tag" => 41985,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 0 # Normal process
     },
     {
       "name" => [ "exposure", "mode" ],
       "tag" => 41986,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "white", "balance" ],
       "tag" => 41987,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "digital", "zoom", "ratio" ],
       "tag" => 41988,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "focal", "length", "in", "35mm", "film" ],
       "tag" => 41989,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
-      "name" => [ "scene", "capture",
-      "type" ],
+      "name" => [ "scene", "capture", "type" ],
       "tag" => 41990,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 0 # Standard
     },
     {
       "name" => [ "gain", "control" ],
       "tag" => 41991,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "contrast" ],
       "tag" => 41992,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 0 # Normal
     },
     {
       "name" => [ "saturation" ],
       "tag" => 41993,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 0 # Normal
     },
     {
       "name" => [ "sharpness" ],
       "tag" => 41994,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 0 # Normal
     },
     {
       "name" => [ "device", "setting", "description" ],
       "tag" => 41995,
-      "type" => [ "UNDEFINED" ]
+      "type" => [ "UNDEFINED" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "subject", "distance", "range" ],
       "tag" => 41996,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "image", "unique", "id" ],
       "tag" => 42016,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 33,
+      "default" => nil
     },
     # {
     #   "name" => [ "camera", "owner", "name" ],
@@ -1197,12 +1568,16 @@ module Tiff
     {
       "name" => [ "gdal", "metadata" ],
       "tag" => 42112,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "gdal", "nodata" ],
       "tag" => 42113,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     # {
     #   "name" => [ "pixel", "format" ],
@@ -1277,22 +1652,30 @@ module Tiff
     {
       "name" => [ "oce", "scanjob", "description" ],
       "tag" => 50215,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "oce", "application", "selector" ],
       "tag" => 50216,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "oce", "identification", "number" ],
       "tag" => 50217,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "oce", "image", "logic", "characteristics" ],
       "tag" => 50218,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     # {
     #   "name" => [ "print", "image", "matching" ],
@@ -1302,167 +1685,233 @@ module Tiff
     {
       "name" => [ "dng", "version" ],
       "tag" => 50706,
-      "type" => [ "BYTE" ]
+      "type" => [ "BYTE" ],
+      "count" => 4,
+      "default" => nil
     },
-    {
-      "name" => [ "dng", "backward", "version" ],
-      "tag" => 50707,
-      "type" => [ "BYTE" ]
-    },
+    # {
+    #   "name" => [ "dng", "backward", "version" ],
+    #   "tag" => 50707,
+    #   "type" => [ "BYTE" ],
+    #   "count" => 4,
+    #   "default" => DNGVersion with the last two bytes set to zero.
+    # },
     {
       "name" => [ "unique", "camera", "model" ],
       "tag" => 50708,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
-    {
-      "name" => [ "localized", "camera", "model" ],
-      "tag" => 50709,
-      "type" => [ "BYTE", "ASCII" ]
-    },
-    {
-      "name" => [ "cfa", "plane", "Color" ],
-      "tag" => 50710,
-      "type" => [ "BYTE" ]
-    },
+    # {
+    #   "name" => [ "localized", "camera", "model" ],
+    #   "tag" => 50709,
+    #   "type" => [ "BYTE", "ASCII" ],
+    #   "count" => 'N',
+    #   "default" => Same as UniqueCameraModel
+    # },
+    # {
+    #   "name" => [ "cfa", "plane", "Color" ],
+    #   "tag" => 50710,
+    #   "type" => [ "BYTE" ],
+    #   "count" => ColorPlanes
+    #   "default" => 0, 1, 2 (= red, green, blue)
+    # },
     {
       "name" => [ "cfa", "layout" ],
       "tag" => 50711,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 1
     },
-    {
-      "name" => [ "linearization", "table" ],
-      "tag" => 50712,
-      "type" => [ "SHORT" ]
-    },
+    # {
+    #   "name" => [ "linearization", "table" ],
+    #   "tag" => 50712,
+    #   "type" => [ "SHORT" ],
+    #   "count" => 'N',
+    #   "default" => Identity table (0, 1, 2, 3, etc.)
+    # },
     {
       "name" => [ "black", "level", "repeat", "dim" ],
       "tag" => 50713,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 2,
+      "default" => [ 1, 1 ]
     },
-    {
-      "name" => [ "black", "level" ],
-      "tag" => 50714,
-      "type" => [ "SHORT", "LONG", "RATIONAL" ]
-    },
-    {
-      "name" => [ "black", "level", "delta", "h" ],
-      "tag" => 50715,
-      "type" => [ "SRATIONAL" ]
-    },
-    {
-      "name" => [ "black", "level", "delta", "v" ],
-      "tag" => 50716,
-      "type" => [ "SRATIONAL" ]
-    },
-    {
-      "name" => [ "white", "level" ],
-      "tag" => 50717,
-      "type" => [ "SHORT", "LONG" ]
-    },
+    # {
+    #   "name" => [ "black", "level" ],
+    #   "tag" => 50714,
+    #   "type" => [ "SHORT", "LONG", "RATIONAL" ],
+    #   "count" => BlackLevelRepeatRows * BlackLevelRepeatCols * SamplesPerPixel
+    #   "default" => 0
+    # },
+    # {
+    #   "name" => [ "black", "level", "delta", "h" ],
+    #   "tag" => 50715,
+    #   "type" => [ "SRATIONAL" ],
+    #   "count" => ImageWidth
+    #   "default" => All zeros
+    # },
+    # {
+    #   "name" => [ "black", "level", "delta", "v" ],
+    #   "tag" => 50716,
+    #   "type" => [ "SRATIONAL" ],
+    #   "count" => ImageLength
+    #   "default" => All zeros
+    # },
+    # {
+    #   "name" => [ "white", "level" ],
+    #   "tag" => 50717,
+    #   "type" => [ "SHORT", "LONG" ],
+    #   "count" => SamplesPerPixel
+    #   "default" => (2 ** BitsPerSample) - 1
+    # },
     {
       "name" => [ "default", "scale" ],
       "tag" => 50718,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 2,
+      "default" => [ 1.0, 1.0 ]
     },
     {
       "name" => [ "default", "crop", "origin" ],
       "tag" => 50719,
-      "type" => [ "SHORT", "LONG", "RATIONAL" ]
+      "type" => [ "SHORT", "LONG", "RATIONAL" ],
+      "count" => 2,
+      "default" => [ 0, 0 ]
     },
-    {
-      "name" => [ "default", "crop", "size" ],
-      "tag" => 50720,
-      "type" => [ "SHORT", "LONG", "RATIONAL" ]
-    },
-    {
-      "name" => [ "color", "matrix", "1" ],
-      "tag" => 50721,
-      "type" => [ "SRATIONAL" ]
-    },
-    {
-      "name" => [ "color", "matrix", "2" ],
-      "tag" => 50722,
-      "type" => [ "SRATIONAL" ]
-    },
-    {
-      "name" => [ "camera", "calibration", "1" ],
-      "tag" => 50723,
-      "type" => [ "SRATIONAL" ]
-    },
-    {
-      "name" => [ "camera", "calibration", "2" ],
-      "tag" => 50724,
-      "type" => [ "SRATIONAL" ]
-    },
-    {
-      "name" => [ "reduction", "matrix", "1" ],
-      "tag" => 50725,
-      "type" => [ "SRATIONAL" ]
-    },
-    {
-      "name" => [ "reduction", "matrix", "2" ],
-      "tag" => 50726,
-      "type" => [ "SRATIONAL" ]
-    },
-    {
-      "name" => [ "analog", "balance" ],
-      "tag" => 50727,
-      "type" => [ "RATIONAL" ]
-    },
-    {
-      "name" => [ "as", "shot", "neutral" ],
-      "tag" => 50728,
-      "type" => [ "SHORT", "RATIONAL" ]
-    },
+    # {
+    #   "name" => [ "default", "crop", "size" ],
+    #   "tag" => 50720,
+    #   "type" => [ "SHORT", "LONG", "RATIONAL" ],
+    #   "count" => 2,
+    #   "default" => ImageWidth, ImageLength
+    # },
+    # {
+    #   "name" => [ "color", "matrix", "1" ],
+    #   "tag" => 50721,
+    #   "type" => [ "SRATIONAL" ],
+    #   "count" => ColorPlanes * 3,
+    #   "default" => nil
+    # },
+    # {
+    #   "name" => [ "color", "matrix", "2" ],
+    #   "tag" => 50722,
+    #   "type" => [ "SRATIONAL" ],
+    #   "count" => ColorPlanes * 3,
+    #   "default" => nil
+    # },
+    # {
+    #   "name" => [ "camera", "calibration", "1" ],
+    #   "tag" => 50723,
+    #   "type" => [ "SRATIONAL" ],
+    #   "count" => ColorPlanes * ColorPlanes
+    #   "default" => Identity matrix
+    # },
+    # {
+    #   "name" => [ "camera", "calibration", "2" ],
+    #   "tag" => 50724,
+    #   "type" => [ "SRATIONAL" ],
+    #   "count" => ColorPlanes * ColorPlanes
+    #   "default" => Identity matrix
+    # },
+    # {
+    #   "name" => [ "reduction", "matrix", "1" ],
+    #   "tag" => 50725,
+    #   "type" => [ "SRATIONAL" ],
+    #   # "count" => 3 * ColorPlanes
+    #   "default" => nil
+    # },
+    # {
+    #   "name" => [ "reduction", "matrix", "2" ],
+    #   "tag" => 50726,
+    #   "type" => [ "SRATIONAL" ],
+    #   "count" => 3 * ColorPlanes
+    #   "default" => nil
+    # },
+    # {
+    #   "name" => [ "analog", "balance" ],
+    #   "tag" => 50727,
+    #   "type" => [ "RATIONAL" ],
+    #   "count" => ColorPlanes
+    #   "default"=> All 1.0
+    # },
+    # {
+    #   "name" => [ "as", "shot", "neutral" ],
+    #   "tag" => 50728,
+    #   "type" => [ "SHORT", "RATIONAL" ],
+    #   "count" => ColorPlanes
+    #   "default" => nil
+    # },
     {
       "name" => [ "as", "shot", "white", "xy" ],
       "tag" => 50729,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 2,
+      "default" => nil
     },
     {
       "name" => [ "baseline", "exposure" ],
       "tag" => 50730,
-      "type" => [ "SRATIONAL" ]
+      "type" => [ "SRATIONAL" ],
+      "count" => 1,
+      "default" => 0.0
     },
     {
       "name" => [ "baseline", "noise" ],
       "tag" => 50731,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => 1.0
     },
     {
       "name" => [ "baseline", "sharpness" ],
       "tag" => 50732,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => 1.0
     },
     {
       "name" => [ "bayer", "green", "split" ],
       "tag" => 50733,
-      "type" => [ "LONG" ]
+      "type" => [ "LONG" ],
+      "count" => 1,
+      "default" => 0
     },
     {
       "name" => [ "linear", "response", "limit" ],
       "tag" => 50734,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => 1.0
     },
     {
       "name" => [ "camera", "serial", "number" ],
       "tag" => 50735,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "lens", "info" ],
       "tag" => 50736,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 4,
+      "default" => nil
     },
-    {
-      "name" => [ "chroma", "blur", "radius" ],
-      "tag" => 50737,
-      "type" => [ "RATIONAL" ]
-    },
+    # {
+    #   "name" => [ "chroma", "blur", "radius" ],
+    #   "tag" => 50737,
+    #   "type" => [ "RATIONAL" ],
+    #   "count" => 1,
+    #   "default" => reader preference
+    # },
     {
       "name" => [ "anti", "alias", "strength" ],
       "tag" => 50738,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => 1.0
     },
     # {
     #   "name" => [ "shadow", "scale" ],
@@ -1472,27 +1921,37 @@ module Tiff
     {
       "name" => [ "dng", "private", "data" ],
       "tag" => 50740,
-      "type" => [ "BYTE" ]
+      "type" => [ "BYTE" ],
+      "count" => 'N',
+      "default" => nil
     },
     {
       "name" => [ "maker", "note", "safety" ],
       "tag" => 50741,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 0
     },
     {
       "name" => [ "calibration", "illuminant", "1" ],
       "tag" => 50778,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => 0 # unknown
     },
     {
       "name" => [ "calibration", "illuminant", "2" ],
       "tag" => 50779,
-      "type" => [ "SHORT" ]
+      "type" => [ "SHORT" ],
+      "count" => 1,
+      "default" => nil
     },
     {
       "name" => [ "best", "quality", "scale" ],
       "tag" => 50780,
-      "type" => [ "RATIONAL" ]
+      "type" => [ "RATIONAL" ],
+      "count" => 1,
+      "default" => 1.0
     },
     # {
     #   "name" => [ "raw", "data", "unique", "id" ],
@@ -1502,8 +1961,15 @@ module Tiff
     {
       "name" => [ "alias", "layer", "metadata" ],
       "tag" => 50784,
-      "type" => [ "ASCII" ]
+      "type" => [ "ASCII" ],
+      "count" => 'N',
+      "default" => nil
     },
+    # {
+    #   "name" => [ "original", "raw", "file", "name" ],
+    #   "tag" => 50827,
+    #   "type" => []
+    # },
     # {
     #   "name" => [ "original", "raw", "file", "data" ],
     #   "tag" => 50828,
