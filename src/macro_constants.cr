@@ -819,13 +819,13 @@ module Tiff
       "count" => 17, # possibly 16, but unlikely
       "default" => nil
     },
-    # {
-    #   "name" => [ "model", "tiepoint", "tag" ],
-    #   "tag" => 33922,
-    #   "type" => [ "DOUBLE" ],
-    #   "count" => N = 6*K, with K = number of tiepoints
-    #   "default" => nil
-    # },
+    {
+      "name" => [ "model", "tiepoint", "tag" ],
+      "tag" => 33922,
+      "type" => [ "DOUBLE" ],
+      "count" => 'N', # N = 6*K, with K = number of tiepoints
+      "default" => nil
+    },
     # {
     #   "name" => [ "site" ],
     #   "tag" => 34016,
@@ -961,13 +961,13 @@ module Tiff
       "count" => 2,
       "default" => nil
     },
-    # {
-    #   "name" => [ "geo", "key", "directory", "tag" ],
-    #   "tag" => 34735,
-    #   "type" => [ "SHORT" ],
-    #   "count" => N >= 4
-    #   "default" => nil
-    # },
+    {
+      "name" => [ "geo", "key", "directory", "tag" ],
+      "tag" => 34735,
+      "type" => [ "SHORT" ],
+      "count" => 'N', # N >= 4
+      "default" => nil
+    },
     {
       "name" => [ "geo", "double", "params", "tag" ],
       "tag" => 34736,

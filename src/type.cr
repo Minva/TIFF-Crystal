@@ -45,4 +45,16 @@ class Tiff::Type
       raise "TIFF DirectoryEntry Type Unsuppoted"
     end
   end
+
+  def self.which(value : Class) : UInt16
+    {% begin %}
+      case value
+      {% for type in TYPES %}
+        when {{ type[1] }} then return {{ type[0] }}_u16
+      {% end %}
+      else
+        raise "TIFF DirectoryEntry Type Unsuppoted"
+      end
+    {% end %}
+  end
 end

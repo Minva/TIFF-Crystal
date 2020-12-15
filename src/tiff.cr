@@ -140,14 +140,14 @@ class Tiff::Tiff
         when {{ description["tag"] }} then self.load_value{{ suffix.id }}(subFileId, dirEntry)
       {% end %}
       else
-        raise "TIFF DirectoryEntry Tag Unsuppoted"
+        raise "TIFF DirectoryEntry Tag #{ dirEntry.tag } Unsuppoted"
       end
     end
   {% end %}
 
-  #############################################################################
+  ##############################################################################
   # Loader Value form Tag
-  #############################################################################
+  ##############################################################################
 
   private def load_compression(type : UInt16, count : UInt32, offset : UInt32)
     # ref doc : https://www.liquisearch.com/tagged_image_file_format/flexible_options/tiff_compression_tag
@@ -240,7 +240,7 @@ class Tiff::Tiff
     description[TAG_COMPRESSION] = @metadata[0][TAG_COMPRESSION][0].as UInt16
     # TODO : Next time check if key?
     description[TAG_PREDICTOR] = @metadata[0][TAG_PREDICTOR][0].as UInt16
-    Tile.new @file.not_nil!, description, offset, byteCounts
+    Tile.new @file.not_nil!, description, offset, byteCounts, 1024 * 1024 * 3
   end
 
   def save(path : String)
@@ -252,33 +252,31 @@ class Tiff::Tiff
   ##############################################################################
 
   def to_package : Bytes
-    # Management of the simple case with only one SubFile
-    nextFreeOffset = 0
-    nextFreeOffset += dataHeader.size
-    nextFreeOffset += 2 + (virtualIFD.number_entries * 12 + 4)
-    # Loop do for each next Free Offset, actually the code mannage only one
-    virtualIFD[indexBPS.to_u32].offset = (nextFreeOffset).to_u32
-    nextFreeOffset += 6
-    virtualIFD[index.to_u32].offset = (nextFreeOffset).to_u32
-    virtualIFD.offset = 0
-    # Calculation of the next offset free 
-    dataPackage = dataHeader
-    dataPackage.concat virtualIFD.to_data
-    val = 8_u16
-    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
-    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
-    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
-    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
-    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
-    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
-    img = @image.not_nil!.pixels
-    dataPackage.concat Array(UInt8).new (img.size) { |index| img[index] }
-    Bytes.new (dataPackage.size) { |index| dataPackage[index] }
-
+    # # Management of the simple case with only one SubFile
+    # nextFreeOffset = 0
+    # nextFreeOffset += dataHeader.size
+    # nextFreeOffset += 2 + (virtualIFD.number_entries * 12 + 4)
+    # # Loop do for each next Free Offset, actually the code mannage only one
+    # virtualIFD[indexBPS.to_u32].offset = (nextFreeOffset).to_u32
+    # nextFreeOffset += 6
+    # virtualIFD[index.to_u32].offset = (nextFreeOffset).to_u32
+    # virtualIFD.offset = 0
+    # # Calculation of the next offset free 
+    # dataPackage = dataHeader
+    # dataPackage.concat virtualIFD.to_data
+    # val = 8_u16
+    # dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
+    # dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
+    # dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
+    # dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
+    # dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
+    # dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
+    # img = @image.not_nil!.pixels
+    # dataPackage.concat Array(UInt8).new (img.size) { |index| img[index] }
+    # Bytes.new (dataPackage.size) { |index| dataPackage[index] }
     ############################################################################
     ############################################################################
     ############################################################################
-
     # INFO optimized for COG
     # TODO lodad @metadata if @description in empty
     ############################################################################
@@ -291,27 +289,25 @@ class Tiff::Tiff
       # TODO : Check if in the @description
       subIndex : Int32 = 0
       @description[index].each do |tag, value|
-        type = Type.which value
+        type = Type.which value.class
         # TODO : Define the count
-        count = 1
+        count = 1_u32
         value.is_a? Array
         # TODO : Define the value
-        offsetValue = 0
+        offsetValue = 0_u32
         # If it's an offset
         listOffset[index] = { tag => subIndex }
-        listIFD << DirectoryEntry.new tag, type, count, offsetValue
+        listIFD[listIFD.size - 1] << DirectoryEntry.new tag, type, count, offsetValue
         subIndex += 1
       end
     end
     ############################################################################
-    # Create a tmp Array for stack the bytes of the file
+    # Generate the Header
     ############################################################################
-    startOffset = 8
-    header = ImageFileHeader.new INTEL_BYTE_ORDER, 42, startOffset
+    startOffset = 8_u32
+    header = ImageFileHeader.new INTEL_BYTE_ORDER, 42_u16, startOffset
     dataHeader = header.to_data
     dataPackage = dataHeader
-    dataPackage.concat virtualIFD.to_data
-
     ############################################################################
     # TODO : Second management of offset
     ############################################################################
@@ -322,19 +318,20 @@ class Tiff::Tiff
       numberOffsets += item.number_entries * 12
       numberOffsets += 4 # 4 Bytes for the numberEntries
     end
-
-
-
+    # TODO : Place the offset
+    # dataPackage.concat virtualIFD.to_data
     ############################################################################
     # TODO : Third place the data
     ############################################################################
-
+    Bytes.new 1
   end
 end
 
 ################################################################################
 # TESTING PART
 ################################################################################
+
+t1 = Time.monotonic
 
 imgTiff = Tiff::Tiff.new "/Users/nikolaiilodenos/Desktop/TCI.tif"
 tile = imgTiff.tile 0
@@ -343,3 +340,6 @@ newTiff = Tiff::Tiff.new image
 newTiff.compression = 8
 # data = newTiff.to_package
 newTiff.save "/Users/nikolaiilodenos/Desktop/AAA.tiff"
+
+t2 = Time.monotonic
+puts "Time TOTAL : #{ (t2 - t1).milliseconds } ms"
