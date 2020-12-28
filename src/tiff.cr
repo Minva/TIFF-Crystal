@@ -8,10 +8,13 @@ require "./macro_constants"
 require "./pixel_format"
 require "./resolution"
 require "./tile"
+require "./type"
 
 class Tiff::Tiff
   @file : File | Nil = nil
   @ifds : Array(ImageFileDirectory) = Array(ImageFileDirectory).new
+  # Array cause SubFile/NewSubFile
+  @description : Array(Description) = Array(Description).new
   # The ID = 0 of metadata is File and > 0 is SubFile/NewSubFile
   @metadata : MetaDataType = MetaDataType.new
 
@@ -21,7 +24,7 @@ class Tiff::Tiff
 
   def initialize(path : String)
     @file = File.new path
-    @header = ImageFileHeader.new Bytes.new 8 { @file.not_nil!.read_byte.not_nil! }    
+    @header = ImageFileHeader.new Bytes.new 8 { @file.not_nil!.read_byte.not_nil! }
     self.load_image_file_directories
     self.load_metadata
   end
@@ -38,9 +41,9 @@ class Tiff::Tiff
     # TODO: Rebuild a image on Tiff Format
   end
 
-  #############################################################################
+  ##############################################################################
   # Private method of class
-  #############################################################################
+  ##############################################################################
 
   private def load_image_file_directories
     offset = @header.not_nil!.offset
@@ -64,17 +67,6 @@ class Tiff::Tiff
         self.tag_call_to_function subFileId, dirEntry
       end
       subFileId += 1
-    end
-  end
-
-  private def type_sizeof(type : UInt16)
-    case type
-    when 1, 2, 6, 7 then return 1
-    when 3, 8 then return 2
-    when 4, 9, 11 then return 4
-    when 5, 10, 12 then return 8
-    else
-      raise "TIFF DirectoryEntry Type Unsuppoted"
     end
   end
 
@@ -109,9 +101,18 @@ class Tiff::Tiff
       {% for name in description["name"] %}
         {% suffix = suffix + "_#{ name.id }" %}
       {% end %}
+
       private def load_value{{ suffix.id }}(subFileId : UInt32, dirEntry : DirectoryEntry)
-        # TODO : raise if the type is wrong
-        # dirEntry.type
+        # with this macro get this Error: undefined macro method 'TypeNode#convert_to_type'
+        # {--% condition = "" %--}
+        # {--% insertOr = false %--}
+        # {--% for type in description["type"] %--}
+        #   {--% if insertOr %--}
+        #     {--% condition += " || " %--}
+        #   {--% end %--} 
+        #   {--% condition += "dirEntry.type == #{ Type.convert_to_type description["name"] }" %--}
+        # {--% end %--}
+        # raise "Tiff load value type #{ Type.convert_to_tag description["name"] } invalid" unless {--{ condition.id }--}
         # TODO : Refactor this code as shit
         if dirEntry.count < 2
           offset = dirEntry.offset
@@ -120,7 +121,7 @@ class Tiff::Tiff
           data = self.value_section_to_data dirEntry, bytes
           @metadata[subFileId][dirEntry.tag] = data
         else
-          nbrByte = dirEntry.count * self.type_sizeof dirEntry.type
+          nbrByte = dirEntry.count * Type.sizeof dirEntry.type
           @file.not_nil!.pos = dirEntry.offset
           bytes = Bytes.new (nbrByte.to_i) { @file.not_nil!.read_byte.not_nil! }
           data = self.value_section_to_data dirEntry, bytes
@@ -139,14 +140,14 @@ class Tiff::Tiff
         when {{ description["tag"] }} then self.load_value{{ suffix.id }}(subFileId, dirEntry)
       {% end %}
       else
-        raise "TIFF DirectoryEntry Tag Unsuppoted"
+        raise "TIFF DirectoryEntry Tag #{ dirEntry.tag } Unsuppoted"
       end
     end
   {% end %}
 
-  #############################################################################
+  ##############################################################################
   # Loader Value form Tag
-  #############################################################################
+  ##############################################################################
 
   private def load_compression(type : UInt16, count : UInt32, offset : UInt32)
     # ref doc : https://www.liquisearch.com/tagged_image_file_format/flexible_options/tiff_compression_tag
@@ -178,9 +179,31 @@ class Tiff::Tiff
     end
   end
 
-  #############################################################################
+  ##############################################################################
   # Public method of class
-  #############################################################################
+  ##############################################################################
+
+  # INFO : This macro auto-gen the public methode for each tag
+  {% begin %}
+    {% for description in DESCRIPTIONS %}
+      {% nameFunction = "" %}
+      {% insertUnderscore = false %}
+      {% for name in description["name"] %}
+        {% if insertUnderscore == true %}
+          {% nameFunction += "_" %}
+        {% end %}
+        {% nameFunction += "#{ name.id }" %}
+        {% insertUnderscore = true %}
+      {% end %}
+
+      def {{ nameFunction.id }}(idSubFile : UInt32)
+      end
+
+      def {{ nameFunction.id }}=(idSubFile : UInt32)
+      end
+
+    {% end %}
+  {% end %}
 
   def crop(xStart : UInt32, yStart : UInt32, xEnd : UInt32, yEnd : UInt32) : Tiff::Image
     # TODO : Crop in Image
@@ -210,85 +233,111 @@ class Tiff::Tiff
     raise "Tiff MetaData Key : TAG_COMPRESSION" unless @metadata[0][TAG_COMPRESSION]?
     offset = @metadata[0][TAG_TILE_OFFSETS][idTile].as UInt32
     byteCounts = @metadata[0][TAG_TILE_BYTE_COUNTS][idTile].as UInt32
-    compression = @metadata[0][TAG_COMPRESSION][0].as UInt16
-    Tile.new @file.not_nil!, compression, offset, byteCounts
+    ############################################################################
+    # INFO : New Version 
+    ############################################################################
+    description = Description.new
+    description[TAG_COMPRESSION] = @metadata[0][TAG_COMPRESSION][0].as UInt16
+    # TODO : Next time check if key?
+    description[TAG_PREDICTOR] = @metadata[0][TAG_PREDICTOR][0].as UInt16
+    Tile.new @file.not_nil!, description, offset, byteCounts, 1024 * 1024 * 3
   end
 
-  def save(path : String, rrr)
-    File.write path, self.to_package(rrr), mode: "w"
+  def save(path : String)
+    File.write path, self.to_package, mode: "w"
   end
 
-  #############################################################################
+  ##############################################################################
   # PACKAGING 
-  #############################################################################
+  ##############################################################################
 
-  def to_package(rrr) : Bytes
-    # TODO : Convert in file already for save as File
-    header = ImageFileHeader.new INTEL_BYTE_ORDER, 42, 8
-    # @ifds : Array(ImageFileDirectory) = Array(ImageFileDirectory).new
-    # Build the IFD first
-    # Use the relative postition before convertion in absolut
-    # virtualIFD
-    height = 1024_u32
-    witdh = 1024_u32
-    index = 0
-    # Need to coding a standar builder of DirectoryEntry
-    ###########################################################################
-    # BUILD IMAGE FILE DIRECTORY
-    ###########################################################################    
-    virtualIFD = ImageFileDirectory.new
-    virtualIFD << DirectoryEntry.new TAG_IMAGE_WIDTH, TYPE_SHORT, 1, 1024
-    virtualIFD << DirectoryEntry.new TAG_IMAGE_LENGTH, TYPE_SHORT, 1, 1024
-    virtualIFD << DirectoryEntry.new TAG_BITS_PER_SAMPLE, TYPE_SHORT, 3, 0 ### NEED an OFFSET
-    indexBPS = virtualIFD.number_entries - 1
-    virtualIFD << DirectoryEntry.new TAG_COMPRESSION, TYPE_SHORT, 1, 8 # 1 = Uncompressed
-    virtualIFD << DirectoryEntry.new TAG_PHOTOMETRIC_INTERPRETATION, TYPE_SHORT, 1, 2 # 2 = RGB
-    virtualIFD << DirectoryEntry.new TAG_SAMPLES_PER_PIXEL, TYPE_SHORT, 1, 3 # 3 for each color RGB
-    virtualIFD << DirectoryEntry.new TAG_PREDICTOR, TYPE_SHORT, 1, 2
-    # TODO : Calculate number of line of the images
-    virtualIFD << DirectoryEntry.new TAG_ROWS_PER_STRIP, TYPE_SHORT, 1, 1024
-    virtualIFD << DirectoryEntry.new TAG_STRIP_OFFSETS, TYPE_LONG, 1, 0 ### NEED an OFFSET
-    index = virtualIFD.number_entries - 1
-    byteCounts = rrr.size
-    # byteCounts = 1024_u32 * 1024_u32 * 3_u32
-    virtualIFD << DirectoryEntry.new TAG_STRIP_BYTE_COUNTS, TYPE_LONG, 1_u32, byteCounts.to_u32
-    ###########################################################################
-    # Convertion
-    ###########################################################################
-    # Management of the simple case with only one SubFile
-    nextFreeOffset = 0
+  def to_package : Bytes
+    # # Management of the simple case with only one SubFile
+    # nextFreeOffset = 0
+    # nextFreeOffset += dataHeader.size
+    # nextFreeOffset += 2 + (virtualIFD.number_entries * 12 + 4)
+    # # Loop do for each next Free Offset, actually the code mannage only one
+    # virtualIFD[indexBPS.to_u32].offset = (nextFreeOffset).to_u32
+    # nextFreeOffset += 6
+    # virtualIFD[index.to_u32].offset = (nextFreeOffset).to_u32
+    # virtualIFD.offset = 0
+    # # Calculation of the next offset free 
+    # dataPackage = dataHeader
+    # dataPackage.concat virtualIFD.to_data
+    # val = 8_u16
+    # dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
+    # dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
+    # dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
+    # dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
+    # dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
+    # dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
+    # img = @image.not_nil!.pixels
+    # dataPackage.concat Array(UInt8).new (img.size) { |index| img[index] }
+    # Bytes.new (dataPackage.size) { |index| dataPackage[index] }
+    ############################################################################
+    ############################################################################
+    ############################################################################
+    # INFO optimized for COG
+    # TODO lodad @metadata if @description in empty
+    ############################################################################
+    # TODO : First generate the chain of IFD
+    ############################################################################
+    listIFD = [] of ImageFileDirectory
+    listOffset = {} of Int32 => Hash(UInt16, Int32)
+    @description.each_index do |index|
+      listIFD << ImageFileDirectory.new
+      # TODO : Check if in the @description
+      subIndex : Int32 = 0
+      @description[index].each do |tag, value|
+        type = Type.which value.class
+        # TODO : Define the count
+        count = 1_u32
+        value.is_a? Array
+        # TODO : Define the value
+        offsetValue = 0_u32
+        # If it's an offset
+        listOffset[index] = { tag => subIndex }
+        listIFD[listIFD.size - 1] << DirectoryEntry.new tag, type, count, offsetValue
+        subIndex += 1
+      end
+    end
+    ############################################################################
+    # Generate the Header
+    ############################################################################
+    startOffset = 8_u32
+    header = ImageFileHeader.new INTEL_BYTE_ORDER, 42_u16, startOffset
     dataHeader = header.to_data
-    nextFreeOffset += dataHeader.size
-    nextFreeOffset += 2 + (virtualIFD.number_entries * 12 + 4)
-    # Loop do for each next Free Offset, actually the code mannage only one
-    virtualIFD[indexBPS.to_u32].offset = (nextFreeOffset).to_u32
-    nextFreeOffset += 6
-    virtualIFD[index.to_u32].offset = (nextFreeOffset).to_u32
-    virtualIFD.offset = 0
-    # Calculation of the next offset free 
     dataPackage = dataHeader
-    dataPackage.concat virtualIFD.to_data
-    val = 8_u16
-    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
-    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
-    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
-    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
-    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[0] ]
-    dataPackage.concat [ (pointerof(val).as Pointer(UInt8))[1] ]
-    dataPackage.concat Array(UInt8).new (rrr.size) { |index| rrr[index] }
-    Bytes.new (dataPackage.size) { |index| dataPackage[index] }
+    ############################################################################
+    # TODO : Second management of offset
+    ############################################################################
+    # INFO calculation of number offset take all IFDs
+    numberOffsets = 0
+    listIFD.each do |item|
+      numberOffsets += 2 # 2 Bytes for the numberEntries
+      numberOffsets += item.number_entries * 12
+      numberOffsets += 4 # 4 Bytes for the numberEntries
+    end
+    # TODO : Place the offset
+    # dataPackage.concat virtualIFD.to_data
+    ############################################################################
+    # TODO : Third place the data
+    ############################################################################
+    Bytes.new 1
   end
 end
 
-###############################################################################
+################################################################################
 # TESTING PART
-###############################################################################
+################################################################################
 
+# t1 = Time.monotonic
 # imgTiff = Tiff::Tiff.new "/Users/nikolaiilodenos/Desktop/TCI.tif"
 # tile = imgTiff.tile 0
 # image = tile.to_image
 # newTiff = Tiff::Tiff.new image
-# # newTiff.compression = 8
+# newTiff.compression = 8
 # # data = newTiff.to_package
-# # INFO : Remove the raw just for be work
-# newTiff.save "/Users/nikolaiilodenos/Desktop/AAA.tiff", tile.raw.not_nil!
+# newTiff.save "/Users/nikolaiilodenos/Desktop/AAA.tiff"
+# t2 = Time.monotonic
+# puts "Time TOTAL : #{ (t2 - t1).milliseconds } ms"
