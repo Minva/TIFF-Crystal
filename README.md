@@ -11,7 +11,7 @@ Documentation
 
    ```yaml
    dependencies:
-     tiff-crystal:
+     tiff:
        github: lodenos/TIFF-Crystal
    ```
 
