@@ -284,11 +284,11 @@ end
 # TESTING PART
 ###############################################################################
 
-imgTiff = Tiff::Tiff.new "/Users/nikolaiilodenos/Desktop/TCI.tif"
-tile = imgTiff.tile 0
-image = tile.to_image
-newTiff = Tiff::Tiff.new image
-# newTiff.compression = 8
-# data = newTiff.to_package
-# INFO : Remove the raw just for be work
-newTiff.save "/Users/nikolaiilodenos/Desktop/AAA.tiff", tile.raw.not_nil!
+# imgTiff = Tiff::Tiff.new "/Users/nikolaiilodenos/Desktop/TCI.tif"
+# tile = imgTiff.tile 0
+# image = tile.to_image
+# newTiff = Tiff::Tiff.new image
+# # newTiff.compression = 8
+# # data = newTiff.to_package
+# # INFO : Remove the raw just for be work
+# newTiff.save "/Users/nikolaiilodenos/Desktop/AAA.tiff", tile.raw.not_nil!
