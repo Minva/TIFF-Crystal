@@ -12,7 +12,7 @@ Documentation
    ```yaml
    dependencies:
      crystal-tiff:
-       github: lodenos/Crystal-TIFF
+       github: lodenos/TIFF-Crystal
    ```
 
 2. Run `shards install`
