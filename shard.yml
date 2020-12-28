@@ -1,0 +1,7 @@
+name: crystal-tiff
+version: 0.1.0
+
+authors:
+  - lodenos <nikolaiilodenos@gmail.com>
+
+crystal: 0.35.1
