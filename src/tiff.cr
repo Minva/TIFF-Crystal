@@ -331,15 +331,13 @@ end
 # TESTING PART
 ################################################################################
 
-t1 = Time.monotonic
-
-imgTiff = Tiff::Tiff.new "/Users/nikolaiilodenos/Desktop/TCI.tif"
-tile = imgTiff.tile 0
-image = tile.to_image
-newTiff = Tiff::Tiff.new image
-newTiff.compression = 8
-# data = newTiff.to_package
-newTiff.save "/Users/nikolaiilodenos/Desktop/AAA.tiff"
-
-t2 = Time.monotonic
-puts "Time TOTAL : #{ (t2 - t1).milliseconds } ms"
+# t1 = Time.monotonic
+# imgTiff = Tiff::Tiff.new "/Users/nikolaiilodenos/Desktop/TCI.tif"
+# tile = imgTiff.tile 0
+# image = tile.to_image
+# newTiff = Tiff::Tiff.new image
+# newTiff.compression = 8
+# # data = newTiff.to_package
+# newTiff.save "/Users/nikolaiilodenos/Desktop/AAA.tiff"
+# t2 = Time.monotonic
+# puts "Time TOTAL : #{ (t2 - t1).milliseconds } ms"
